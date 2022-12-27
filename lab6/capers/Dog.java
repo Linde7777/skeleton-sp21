@@ -73,7 +73,7 @@ public class Dog implements Serializable {
             DOG_FOLDER.mkdir();
         }
         File dogFile = Utils.join(System.getProperty("user.dir"),
-                "dogs", this.name);
+                ".capers","dogs", this.name);
         writeObject(dogFile, this);
     }
 
