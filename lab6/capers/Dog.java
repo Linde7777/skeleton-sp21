@@ -9,7 +9,7 @@ import static capers.Utils.*;
 /**
  * Represents a dog that can be serialized.
  *
- * @author TODO
+ * @author Linde
  */
 public class Dog implements Serializable {
 

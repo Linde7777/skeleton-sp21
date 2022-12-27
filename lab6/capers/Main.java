@@ -56,7 +56,6 @@ public class Main {
                 break;
             case "dog":
                 validateNumArgs("dog", args, 4);
-                // TODO: make a dog
                 String name = args[1];
                 String breed = args[2];
                 int age = Integer.parseInt(args[3]);
@@ -65,8 +64,7 @@ public class Main {
             case "birthday":
                 validateNumArgs("birthday", args, 2);
                 String queryName = args[1];
-                Dog queryDog = Dog.fromFile(queryName);
-                queryDog.haveBirthday();
+                CapersRepository.celebrateBirthday(queryName);
 
                 break;
             default:
