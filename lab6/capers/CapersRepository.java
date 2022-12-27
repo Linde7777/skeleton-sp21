@@ -52,8 +52,11 @@ public class CapersRepository {
      */
     public static void writeStory(String text) {
         File storyFile = Utils.join(System.getProperty("user.dir"), ".capers", "story");
-        String formerText = Utils.readContentsAsString(storyFile);
-        formerText += "\n";
+        String formerText="";
+        if (storyFile.exists()) {
+            formerText = Utils.readContentsAsString(storyFile);
+            formerText += "\n";
+        }
         Utils.writeContents(storyFile, formerText, text);
         System.out.println(readContentsAsString(storyFile));
     }
