@@ -2,6 +2,7 @@ package capers;
 
 import java.io.File;
 import java.io.Serializable;
+import java.util.Locale;
 
 import static capers.Utils.*;
 
@@ -51,8 +52,9 @@ public class Dog implements Serializable {
      * @return Dog read from file
      */
     public static Dog fromFile(String name) {
-        // TODO (hint: look at the Utils file)
-        return null;
+        File dogFile = Utils.join(System.getProperty("user.dir"), ".capers",
+                "dogs", name);
+        return Utils.readObject(dogFile, Dog.class);
     }
 
     /**
@@ -73,7 +75,7 @@ public class Dog implements Serializable {
             DOG_FOLDER.mkdir();
         }
         File dogFile = Utils.join(System.getProperty("user.dir"),
-                ".capers","dogs", this.name);
+                ".capers", "dogs", this.name);
         writeObject(dogFile, this);
     }
 
