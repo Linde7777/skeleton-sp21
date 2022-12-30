@@ -13,11 +13,12 @@ import static capers.Utils.*;
  */
 public class Dog implements Serializable {
 
+    static final File CWD = new File(System.getProperty("user.dir"));
     /**
      * Folder that dogs live in.
      */
     static final File DOG_FOLDER =
-            join(System.getProperty("user.dir"), ".capers", "dogs");
+            join(CWD, ".capers", "dogs");
 
     /**
      * Age of dog.
@@ -52,7 +53,7 @@ public class Dog implements Serializable {
      * @return Dog read from file
      */
     public static Dog fromFile(String name) {
-        File dogFile = Utils.join(System.getProperty("user.dir"), ".capers",
+        File dogFile = Utils.join(CWD, ".capers",
                 "dogs", name);
         return Utils.readObject(dogFile, Dog.class);
     }
@@ -74,7 +75,7 @@ public class Dog implements Serializable {
         if (!DOG_FOLDER.exists()) {
             DOG_FOLDER.mkdir();
         }
-        File dogFile = Utils.join(System.getProperty("user.dir"),
+        File dogFile = Utils.join(CWD,
                 ".capers", "dogs", this.name);
         writeObject(dogFile, this);
     }
