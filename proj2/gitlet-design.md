@@ -1,16 +1,15 @@
 # Gitlet Design Document
 
-**Name**:
+**Name**: Linde
 
 ## Classes and Data Structures
 
-### Class 1
+### Class: Repository
 
 #### Fields
 
 1. Field 1
 2. Field 2
-
 
 ### Class 2
 
@@ -18,7 +17,6 @@
 
 1. Field 1
 2. Field 2
-
 
 ## Algorithms
 
