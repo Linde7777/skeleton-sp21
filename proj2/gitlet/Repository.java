@@ -2,6 +2,7 @@ package gitlet;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
@@ -39,10 +40,14 @@ public class Repository {
     public static final File GITLET_DIR = join(CWD, ".gitlet");
 
     /**
-     * The .gitlet/stageForAdd directory,
-     * used to store the files readied for commit
+     * The .gitlet/stageForAdd directory, where store the files readied for commit
      */
     public static final File GITLET_STAGE_FOR_ADD_DIR = join(GITLET_DIR, "stageForAdd");
+
+    /**
+     * The .gitlet/stageForRemove directory, where store the files readied for remove
+     */
+    public static final File GITLET_STAGE_FOR_REMOVE = join(GITLET_DIR, "stageForRemove");
 
     /**
      * The .gitlet/blobs directory, where store the files of different version
@@ -50,11 +55,15 @@ public class Repository {
     public static final File GITLET_BLOBS_DIR = join(GITLET_DIR, "blobs");
 
     /**
-     * The .gitlet/commits directoru, where store the serialized Commits
+     * The .gitlet/commits directory, where store the serialized Commits
      */
     public static final File GITLET_COMMITS_DIR = join(GITLET_DIR, "commits");
 
+    /**
+     * The .gitlet/branches directory, where store the master, HEAD files
+     */
     public static final File GITLET_BRANCHES_DIR = join(GITLET_DIR, "branches");
+
     /**
      * The sha1 value of master branch pointer
      */
@@ -90,12 +99,12 @@ public class Repository {
             System.exit(0);
         }
         GITLET_STAGE_FOR_ADD_DIR.mkdir();
+        GITLET_STAGE_FOR_REMOVE.mkdir();
         GITLET_BLOBS_DIR.mkdir();
         GITLET_COMMITS_DIR.mkdir();
         GITLET_BRANCHES_DIR.mkdir();
         master_FILE.createNewFile();
         HEAD_FILE.createNewFile();
-
 
         // since add and commit must contain file,
         // here we need to make a temp file
@@ -120,7 +129,12 @@ public class Repository {
             System.exit(0);
         }
 
-        if (checkIdenticalFile(file)) {
+        // if currentCommit is null,
+        // in this case, we don't need to care about identical file,
+        // since nothing has been committed yet.
+        String fileSha1 = sha1((Object) readContents(file));
+        Commit currentCommit = getCurrentCommit();
+        if (currentCommit != null && currentCommit.blobSha1List.contains(fileSha1)) {
             System.exit(0);
         }
 
@@ -129,29 +143,14 @@ public class Repository {
         Files.copy(src, dest, StandardCopyOption.REPLACE_EXISTING);
     }
 
-    /**
-     * check if the file added to stageForAdd directory is
-     * identical to one of the files in the current Commit
-     *
-     * @param file the file needed to be checked
-     * @return return true if file is identical to one of the files
-     * in the current Commit, false otherwise
-     */
-    private static boolean checkIdenticalFile(File file) {
-        String fileSha1 = sha1((Object) readContents(file));
-        String currentCommitSha1 = readContentsAsString(HEAD_FILE);
-
-        // if the content in HEAD_FILE is empty,
-        // that means it is init() call add(),
-        // in this case, we don't need to care about identical file,
-        // since nothing has been committed yet.
-        if (currentCommitSha1.equals("")) {
-            return false;
+    private static Commit getCurrentCommit() {
+        String commitSha1 = readContentsAsString(HEAD_FILE);
+        // if there is no commit.
+        // this will happen when we initialize a .gitlet directory
+        if (commitSha1.equals("")) {
+            return null;
         }
-
-        File commitFile = join(GITLET_COMMITS_DIR, currentCommitSha1);
-        Commit currentCommit = readObject(commitFile, Commit.class);
-        return currentCommit.blobSha1List.contains(fileSha1);
+        return readObject(join(GITLET_COMMITS_DIR, commitSha1), Commit.class);
     }
 
     /**
@@ -182,8 +181,7 @@ public class Repository {
      */
     private static void commit(String message, String parentSha1) throws IOException {
         checkInitialize();
-        File[] files = GITLET_STAGE_FOR_ADD_DIR.listFiles();
-        if (files == null) {
+        if (GITLET_STAGE_FOR_ADD_DIR.list().length == 0) {
             System.out.println("No changes added to the commit.");
             System.exit(0);
         }
@@ -224,6 +222,15 @@ public class Repository {
         masterSha1 = HEADSha1;
         writeContents(HEAD_FILE, HEADSha1);
         writeContents(master_FILE, masterSha1);
+    }
+
+    public static void remove(String filename) {
+        for (File file : Objects.requireNonNull(GITLET_STAGE_FOR_ADD_DIR.listFiles())) {
+            if (filename.equals(file.getName())) {
+                file.delete();
+            }
+        }
+
     }
 
 
