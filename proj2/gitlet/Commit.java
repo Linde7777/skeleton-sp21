@@ -10,6 +10,7 @@ import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.Date;
 import java.util.LinkedList;
+import java.util.Objects;
 
 import static gitlet.Utils.join;
 import static gitlet.Utils.sha1;
@@ -62,9 +63,10 @@ public class Commit implements Serializable {
      * @param parentSha1      the sha1 value of the parent of this Commit
      * @param stagedForAddDir will be used by setupBlobs(), see its comment
      * @param blobsDir        will be used by setupBlobs(), see its comment
-     * @throws IOException
+     * @throws IOException the exception that setupBlobs will throw
      */
-    public Commit(String message, String parentSha1, File stagedForAddDir, File blobsDir) throws IOException {
+    public Commit(String message, String parentSha1,
+                  File stagedForAddDir, File blobsDir) throws IOException {
         if (parentSha1 != null) {
             this.timeStamp = new Date();
         } else {
@@ -96,13 +98,16 @@ public class Commit implements Serializable {
      * @param stagedForAddDir the files in this directory will be committed
      * @param blobsDir        where store the blobs
      */
-    public void setupBlobs(File stagedForAddDir, File blobsDir) throws IOException {
-        File[] files = stagedForAddDir.listFiles();
-        for (File file : files) {
+    private void setupBlobs(File stagedForAddDir, File blobsDir) throws IOException {
+        for (File file : Objects.requireNonNull(stagedForAddDir.listFiles())) {
             String fileSha1 = sha1(file);
             this.blobSha1List.add(fileSha1);
             File blobDir = join(blobsDir, fileSha1);
-            blobDir.mkdir();
+            if (!blobDir.exists()) {
+                blobDir.mkdir();
+            } else {
+                throw new GitletException("sha1 value conflict: " + fileSha1);
+            }
 
             Path src = file.toPath();
             Path dest = blobDir.toPath();
