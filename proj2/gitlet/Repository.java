@@ -30,7 +30,7 @@ public class Repository {
     /**
      * The current working directory.
      */
-    public static final File CWD = new File(System.getProperty(System.getProperty("user.dir")));
+    public static final File CWD = new File(System.getProperty("user.dir"));
 
     /**
      * The .gitlet directory.
