@@ -116,7 +116,9 @@ public class Repository {
     }
 
     /**
-     * copy the file in CWD to the GITLET_STAGE_FOR_ADD_DIR
+     * copy the file in CWD to the GITLET_STAGE_FOR_ADD_DIR,
+     * if the file we add in to GITLET_STAGE_FOR_ADD is identical
+     * to one of the files in current commit, we won't add it.
      *
      * @param filename the file we want to add
      * @throws IOException
@@ -129,9 +131,9 @@ public class Repository {
             System.exit(0);
         }
 
-        // if currentCommit is null,
-        // in this case, we don't need to care about identical file,
-        // since nothing has been committed yet.
+        // if currentCommit is null, that means nothing has been committed yet,
+        // so we don't need to care about whether the file we add is identical
+        // to one of the files in the current Commit
         String fileSha1 = sha1((Object) readContents(file));
         Commit currentCommit = getCurrentCommit();
         if (currentCommit != null && currentCommit.blobSha1List.contains(fileSha1)) {
