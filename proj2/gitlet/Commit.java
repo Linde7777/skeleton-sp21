@@ -81,7 +81,9 @@ public class Commit implements Serializable {
     }
 
     /**
-     * this function will create blobs from the files in stagedForAdd directory.
+     * A private helper function of Commit constructor.
+     * this function will create blobs from the files in stagedForAdd directory,
+     * and put the sha1 values into Commit.blobSha1List
      * In order to prevent filename conflict, each file is stored in a
      * directory which named after this file's sha1 value.
      * <p>
