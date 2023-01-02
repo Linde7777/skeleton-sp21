@@ -56,14 +56,14 @@ public class Repository {
     /**
      * The sha1 value of master branch pointer
      */
-    public String masterSha1;
+    public static String masterSha1;
 
     /**
      * The sha1 value of HEAD pointer
      */
-    public String HEADSha1;
+    public static String HEADSha1;
 
-    public void init() throws IOException {
+    public static void init() throws IOException {
         if (!GITLET_DIR.exists()) {
             GITLET_DIR.mkdir();
         } else {
@@ -89,7 +89,7 @@ public class Repository {
         commit("init commit", null);
     }
 
-    public void add(String filename) throws IOException {
+    public static void add(String filename) throws IOException {
         File file = new File(filename);
         String fileSha1 = sha1(file);
         //todo: check if this file is identical to the current commit
@@ -97,6 +97,10 @@ public class Repository {
         Path src = file.toPath();
         Path dest = GITLET_STAGE_FOR_ADD_DIR.toPath();
         Files.copy(src, dest, StandardCopyOption.REPLACE_EXISTING);
+    }
+
+    public static void commit(String message) throws IOException {
+        commit(message, HEADSha1);
     }
 
     /**
@@ -114,13 +118,17 @@ public class Repository {
      * @param parentSha1
      * @throws IOException
      */
-    public void commit(String message, String parentSha1) throws IOException {
+    private static void commit(String message, String parentSha1) throws IOException {
         Commit commit = new Commit(message, parentSha1,
                 GITLET_STAGE_FOR_ADD_DIR, GITLET_BLOBS_DIR);
 
         for (File file : Objects.requireNonNull(GITLET_STAGE_FOR_ADD_DIR.listFiles())) {
             file.delete();
         }
+
+        // todo: may need to be modify when dealing with checkout
+        masterSha1 = commit.getCommitSha1();
+        HEADSha1 = commit.getCommitSha1();
 
         writeObject(join(GITLET_COMMITS_DIR, commit.getCommitSha1()), commit);
     }
