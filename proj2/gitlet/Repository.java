@@ -60,9 +60,19 @@ public class Repository {
     public static String masterSha1;
 
     /**
+     * where store the sha1 value of master as file
+     */
+    public static File master_FILE = join(GITLET_DIR, "master");
+
+    /**
      * The sha1 value of HEAD pointer
      */
     public static String HEADSha1;
+
+    /**
+     * where store the sha1 value of HEAD as a file
+     */
+    public static final File HEAD_FILE = join(GITLET_DIR, "HEAD");
 
     public static void init() throws IOException {
         if (!GITLET_DIR.exists()) {
@@ -84,6 +94,14 @@ public class Repository {
             GITLET_COMMITS_DIR.mkdir();
         }
 
+        if (!master_FILE.exists()) {
+            master_FILE.createNewFile();
+        }
+
+        if (!HEAD_FILE.exists()) {
+            HEAD_FILE.createNewFile();
+        }
+
         // since add and commit must contain file,
         // here we need to make a temp file
         File file = join(CWD, ".gitletTempFile");
@@ -93,16 +111,39 @@ public class Repository {
         file.delete();
     }
 
+    /**
+     * copy the file to the GITLET_STAGE_FOR_ADD_DIR
+     *
+     * @param filename the file we want to add
+     * @throws IOException
+     */
     public static void add(String filename) throws IOException {
         File file = join(CWD, filename);
+        if (!file.exists()) {
+            System.out.println("File does not exist.");
+            System.exit(0);
+        }
+
+        // check if this file is identical to the current commit
         String fileSha1 = sha1((Object) readContents(file));
-        //todo: check if this file is identical to the current commit
+        String currentCommitSha1 = readContentsAsString(HEAD_FILE);
+        File commitFile = join(GITLET_COMMITS_DIR, currentCommitSha1);
+        Commit currentCommit = readObject(commitFile, Commit.class);
+        if (currentCommit.blobSha1List.contains(fileSha1)) {
+            System.exit(0);
+        }
 
         Path src = file.toPath();
         Path dest = join(GITLET_STAGE_FOR_ADD_DIR, file.getName()).toPath();
         Files.copy(src, dest, StandardCopyOption.REPLACE_EXISTING);
     }
 
+    /**
+     * notice that it is public method
+     *
+     * @param message
+     * @throws IOException
+     */
     public static void commit(String message) throws IOException {
         commit(message, HEADSha1);
     }
@@ -128,13 +169,13 @@ public class Repository {
 
         // the newest file in GITLET_COMMITS_DIR is the commit we just created
         // where the HEAD should point to
+
         // copy from https://www.baeldung.com/java-last-modified-file
         Path dirPath = GITLET_COMMITS_DIR.toPath();
         Optional<Path> opPath = Files.list(dirPath).filter(p -> !Files.isDirectory(p))
                 .sorted((p1, p2) -> Long.valueOf(p2.toFile().lastModified())
                         .compareTo(p1.toFile().lastModified()))
                 .findFirst();
-
         File theNewestFile;
         if (opPath.isPresent()) {
             theNewestFile = opPath.get().toFile();
@@ -146,7 +187,8 @@ public class Repository {
         //todo: write it into a file
         HEADSha1 = theNewestFile.getName();
         masterSha1 = HEADSha1;
-
+        writeContents(HEAD_FILE, HEADSha1);
+        writeContents(master_FILE, masterSha1);
     }
 
 
