@@ -216,7 +216,14 @@ public class Repository {
         writeContents(master_FILE, masterSha1);
     }
 
-    public static void remove(String filename) {
+    /**
+     * If the file exists in GITLET_STAGE_FOR_ADD_DIR, we remove it.
+     * If the file is tracked in the current commit, stage it for removal
+     * and remove the file from CWD if the user has not already done so
+     *
+     * @param filename the name of the file that we want to remove
+     */
+    public static void remove(String filename) throws IOException {
         for (File file : Objects.requireNonNull(GITLET_STAGE_FOR_ADD_DIR.listFiles())) {
             if (filename.equals(file.getName())) {
                 file.delete();
@@ -224,7 +231,41 @@ public class Repository {
         }
 
         Commit currentCommit = getCurrentCommit();
+        if (currentCommit == null) {
+            System.out.println("No reason to remove the file.");
+            System.exit(0);
+        }
+        for (String blobDirPath : currentCommit.blobSha1List) {
+            File file = getTheOnlyFileInDir(blobDirPath);
+            if (file.getName().equals(filename)) {
+                Path src = file.toPath();
+                Path dest = join(GITLET_STAGE_FOR_REMOVE, filename).toPath();
+                Files.copy(src, dest, StandardCopyOption.REPLACE_EXISTING);
+            }
+        }
+
+
     }
 
+    /**
+     * If we has already design that in certain directory,
+     * there is only one file, we call this function to get that file
+     *
+     * @param dirString the directory path, e.g. "home/john/folder1"
+     * @return the only file in the directory
+     */
+    private static File getTheOnlyFileInDir(String dirString) {
+        File dir = new File(dirString);
+        if (dir.isDirectory()) {
+            File[] files = dir.listFiles();
+            if (files.length != 1) {
+                throw new GitletException("This directory has more than one file");
+            } else {
+                return files[0];
+            }
+        } else {
+            throw new GitletException("This is not a directory");
+        }
+    }
 
 }
