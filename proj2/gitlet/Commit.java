@@ -48,8 +48,8 @@ public class Commit implements Serializable {
      * if the parent is null, the timestamp will be set as
      * //TODO: format of timestamp
      * "00:00:00 UTC, Thursday, 1 January 1970"
+     * this function will be only used to create the first commit
      * <p>
-     *
      *
      * @param message         The message of the commit
      * @param parentSha1      the sha1 value of the parent of this Commit
@@ -58,7 +58,7 @@ public class Commit implements Serializable {
      * @throws IOException the exception that setupBlobs will throw
      */
     public Commit(String message, String parentSha1,
-                  File stagedForAddDir, File blobsDir) throws IOException {
+                  File stagedForAddDir, File blobsDir, File stageForRemove) throws IOException {
         if (parentSha1 != null) {
             this.timeStamp = new Date();
         } else {
@@ -72,8 +72,23 @@ public class Commit implements Serializable {
 
     }
 
+    public void modifyVariable(String message, String parentSha1, File stagedForAddDir, File blobsDir) throws IOException {
+        this.message = message;
+        this.parentSha1 = parentSha1;
+        this.timeStamp = new Date();
+
+        //TODO: dealing with blobSha1List
+        for (File file : stagedForAddDir.listFiles()) {
+            String fileSha1 = sha1(readContents(file));
+            if (!this.blobSha1List.contains(fileSha1)) {
+                addFile(blobsDir, fileSha1, file);
+            }
+        }
+
+    }
+
+
     /**
-     * A private helper function of Commit constructor.
      * this function will create blobs from the files in stagedForAdd directory,
      * and put the sha1 values into Commit.blobSha1List
      * In order to prevent filename conflict, each file is stored in a
@@ -92,21 +107,30 @@ public class Commit implements Serializable {
      * @param stagedForAddDir the files in this directory will be committed
      * @param blobsDir        where store the blobs
      */
-    private void setupBlobs(File stagedForAddDir, File blobsDir) throws IOException {
+    public void setupBlobs(File stagedForAddDir, File blobsDir) throws IOException {
         for (File file : Objects.requireNonNull(stagedForAddDir.listFiles())) {
             String fileSha1 = sha1((Object) readContents(file));
             this.blobSha1List.add(fileSha1);
-            File blobDir = join(blobsDir, fileSha1);
-            if (!blobDir.exists()) {
-                blobDir.mkdir();
-            } else {
-                throw new GitletException("sha1 value conflict: " + fileSha1);
-            }
-
-            Path src = file.toPath();
-            Path dest = join(blobDir, file.getName()).toPath();
-            Files.copy(src, dest, StandardCopyOption.REPLACE_EXISTING);
+            addFile(blobsDir, fileSha1, file);
         }
     }
 
+    /**
+     * create a new directory mainDir/subDir, and add file in it.
+     *
+     * @param mainDir
+     * @param subDir
+     * @param file
+     */
+    private void addFile(File mainDir, String subDir, File file) throws IOException {
+        File blobDir = join(mainDir, subDir);
+        if (!blobDir.exists()) {
+            blobDir.mkdir();
+        } else {
+            throw new GitletException("sha1 value conflict: " + subDir);
+        }
+        Path src = file.toPath();
+        Path dest = join(blobDir, file.getName()).toPath();
+        Files.copy(src, dest, StandardCopyOption.REPLACE_EXISTING);
+    }
 }
