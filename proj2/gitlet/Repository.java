@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
+import java.util.Objects;
 
 import static gitlet.Utils.*;
 
@@ -48,6 +49,11 @@ public class Repository {
     public static final File GITLET_BLOBS_DIR = join(GITLET_DIR, "blobs");
 
     /**
+     * The .gitlet/commits directoru, where store the serialized Commits
+     */
+    public static final File GITLET_COMMITS_DIR = join(GITLET_DIR, "commits");
+
+    /**
      * The sha1 value of master branch pointer
      */
     public String masterSha1;
@@ -73,11 +79,14 @@ public class Repository {
             GITLET_BLOBS_DIR.mkdir();
         }
 
-        File sentinelFile = new File(".gitletTemp.txt");
-        sentinelFile.createNewFile();
-        add(sentinelFile.toString());
+        if (!GITLET_COMMITS_DIR.exists()) {
+            GITLET_COMMITS_DIR.mkdir();
+        }
+
+        File file = new File(".gitletTempFile");
+        file.createNewFile();
+        add(file.getName());
         commit("init commit", null);
-        sentinelFile.delete();
     }
 
     public void add(String filename) throws IOException {
@@ -90,9 +99,30 @@ public class Repository {
         Files.copy(src, dest, StandardCopyOption.REPLACE_EXISTING);
     }
 
+    /**
+     * initliaze a Commit class with given variable,
+     * then delete files in stageForAdd directory,
+     * then serialize Commit, which is named after its sha1 value,
+     * put it in .gitlet/commits
+     * <p>
+     * e.g.
+     * We initialize a Commit, whose sha1 value is a154ccd,
+     * then we will serialize this commit, this serialized file
+     * will be named after a154ccd, then we put it in .gitlet/commits
+     *
+     * @param message
+     * @param parentSha1
+     * @throws IOException
+     */
     public void commit(String message, String parentSha1) throws IOException {
+        Commit commit = new Commit(message, parentSha1,
+                GITLET_STAGE_FOR_ADD_DIR, GITLET_BLOBS_DIR);
 
+        for (File file : Objects.requireNonNull(GITLET_STAGE_FOR_ADD_DIR.listFiles())) {
+            file.delete();
+        }
 
+        writeObject(join(GITLET_COMMITS_DIR, commit.getCommitSha1()), commit);
     }
 
 
