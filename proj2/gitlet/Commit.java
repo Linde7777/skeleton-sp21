@@ -3,13 +3,16 @@ package gitlet;
 // TODO: any imports you need here
 
 import java.io.File;
+import java.io.IOException;
 import java.io.Serializable;
-import java.text.SimpleDateFormat;
-import java.util.Arrays;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.util.Date;
 import java.util.LinkedList;
 
-import static gitlet.Utils.*;
+import static gitlet.Utils.join;
+import static gitlet.Utils.sha1;
 
 /**
  * Represents a gitlet commit object.
@@ -20,14 +23,6 @@ import static gitlet.Utils.*;
  */
 public class Commit implements Serializable {
     /**
-     * TODO: add instance variables here.
-     * <p>
-     * List all instance variables of the Commit class here with a useful
-     * comment above them describing what that variable represents and how that
-     * variable is used. We've provided one example for `message`.
-     */
-
-    /**
      * The message of this Commit.
      */
     private String message;
@@ -35,41 +30,83 @@ public class Commit implements Serializable {
     /**
      * The time when this Commit was created.
      */
-    private String timeStamp;
+    private Date timeStamp;
 
     /**
      * The sha1 value of this Commit
      */
     private String commitSha1;
 
+    public String getCommitSha1() {
+        return commitSha1;
+    }
+
     /**
-     * where store the blobs
+     * where store the sha1 value of blobs
      */
-    LinkedList<String> blobSha1 = new LinkedList<>();
+    LinkedList<String> blobSha1List;
 
     /**
      * The sha1 value of the parent of this Commit.
      */
     private String parentSha1;
 
-    public Commit(String message, String parentSha1, File stageForAddDir) {
-        if (message == null || message.equals("")) {
-            System.out.println("Please enter a commit message.");
-            System.exit(0);
+    /**
+     * initialize Commit with given variable,
+     * the timestamp will be initialized by the current time
+     * if the parent is null, the timestamp will be set as
+     * //TODO: format of timestamp
+     * "00:00:00 UTC, Thursday, 1 January 1970"
+     *
+     * @param message         The message of the commit
+     * @param parentSha1      the sha1 value of the parent of this Commit
+     * @param stagedForAddDir will be used by setupBlobs(), see its comment
+     * @param blobsDir        will be used by setupBlobs(), see its comment
+     * @throws IOException
+     */
+    public Commit(String message, String parentSha1, File stagedForAddDir, File blobsDir) throws IOException {
+        if (parentSha1 != null) {
+            this.timeStamp = new Date();
+        } else {
+            this.timeStamp = new Date(0);
         }
+
         this.message = message;
         this.parentSha1 = parentSha1;
+        this.blobSha1List = new LinkedList<>();
+        setupBlobs(stagedForAddDir, blobsDir);
         this.commitSha1 = sha1(this);
-        this.timeStamp = new SimpleDateFormat("yyyy.MM.dd.HH.mm.ss")
-                .format(new Date());
+    }
 
-        File[] files = stageForAddDir.listFiles();
-        if (files.length == 0) {
-            System.out.println("No changes added to the commit.");
-            System.exit(0);
-        }
+    /**
+     * this function will create blobs from the files in stagedForAdd directory.
+     * In order to prevent filename conflict, each file is stored in a
+     * directory which named after this file's sha1 value.
+     * <p>
+     * e.g.
+     * hello.txt's sha1 is 7afbac, we call it hello.txt version 1,
+     * when this function is executed, in the .gitlet/blobs/7afbac directory,
+     * there is a hello.txt(version 1)
+     * <p>
+     * now we modify the content of hello.txt, we call it hello.txt version 2
+     * and its sha1 value is a127db
+     * when this function is executed, in the .gitlet/blobs/a127db directory,
+     * there is a hello.txt(version 2)
+     *
+     * @param stagedForAddDir the files in this directory will be committed
+     * @param blobsDir        where store the blobs
+     */
+    public void setupBlobs(File stagedForAddDir, File blobsDir) throws IOException {
+        File[] files = stagedForAddDir.listFiles();
         for (File file : files) {
-            blobSha1.add(sha1(file));
+            String fileSha1 = sha1(file);
+            this.blobSha1List.add(fileSha1);
+            File blobDir = join(blobsDir, fileSha1);
+            blobDir.mkdir();
+
+            Path src = file.toPath();
+            Path dest = blobDir.toPath();
+            Files.copy(src, dest, StandardCopyOption.REPLACE_EXISTING);
         }
     }
 
