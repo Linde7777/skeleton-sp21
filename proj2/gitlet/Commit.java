@@ -43,6 +43,7 @@ public class Commit implements Serializable {
     private String parentSha1;
 
     /**
+     * it will be only called when we initialize a gitlet repo
      * initialize Commit with given variable,
      * the timestamp will be initialized by the current time
      * if the parent is null, the timestamp will be set as
@@ -59,31 +60,29 @@ public class Commit implements Serializable {
      */
     public Commit(String message, String parentSha1,
                   File stagedForAddDir, File blobsDir, File stageForRemove) throws IOException {
-        if (parentSha1 != null) {
-            this.timeStamp = new Date();
-        } else {
+        if (parentSha1 == null) {
             this.timeStamp = new Date(0);
+        } else {
+            throw new GitletException(
+                    "You should call constructor only when you initialize a gitlet repo");
         }
-
         this.message = message;
-        this.parentSha1 = parentSha1;
+        this.parentSha1 = null;
         this.blobSha1List = new LinkedList<>();
-        setupBlobs(stagedForAddDir, blobsDir);
+        addBlobs(stagedForAddDir, blobsDir);
 
     }
 
-    public void modifyVariable(String message, String parentSha1, File stagedForAddDir, File blobsDir) throws IOException {
+    public void modifyCommit(String message, String parentSha1, File stagedForAddDir, File stageForRemoveDir, File blobsDir) throws IOException {
         this.message = message;
         this.parentSha1 = parentSha1;
         this.timeStamp = new Date();
+        addBlobs(stagedForAddDir, blobsDir);
+        removeBlobs(stageForRemoveDir, blobsDir);
+    }
 
-        //TODO: dealing with blobSha1List
-        for (File file : stagedForAddDir.listFiles()) {
-            String fileSha1 = sha1(readContents(file));
-            if (!this.blobSha1List.contains(fileSha1)) {
-                addFile(blobsDir, fileSha1, file);
-            }
-        }
+
+    private void removeBlobs(File stagedForRemoveDir, File blobsDir) {
 
     }
 
@@ -107,22 +106,24 @@ public class Commit implements Serializable {
      * @param stagedForAddDir the files in this directory will be committed
      * @param blobsDir        where store the blobs
      */
-    public void setupBlobs(File stagedForAddDir, File blobsDir) throws IOException {
+    public void addBlobs(File stagedForAddDir, File blobsDir) throws IOException {
         for (File file : Objects.requireNonNull(stagedForAddDir.listFiles())) {
             String fileSha1 = sha1((Object) readContents(file));
-            this.blobSha1List.add(fileSha1);
-            addFile(blobsDir, fileSha1, file);
+            if (!this.blobSha1List.contains(fileSha1)) {
+                this.blobSha1List.add(fileSha1);
+                addFileInCombinedDir(blobsDir, fileSha1, file);
+            }
         }
     }
 
     /**
-     * create a new directory mainDir/subDir, and add file in it.
+     * create a new directory mainDir/subDir, and add file to it.
      *
      * @param mainDir
      * @param subDir
      * @param file
      */
-    private void addFile(File mainDir, String subDir, File file) throws IOException {
+    private void addFileInCombinedDir(File mainDir, String subDir, File file) throws IOException {
         File blobDir = join(mainDir, subDir);
         if (!blobDir.exists()) {
             blobDir.mkdir();
