@@ -64,20 +64,11 @@ public class Repository {
      */
     public static final File GITLET_BRANCHES_DIR = join(GITLET_DIR, "branches");
 
-    /**
-     * The sha1 value of master branch pointer
-     */
-    public static String masterSha1;
 
     /**
      * where store the sha1 value of master as file
      */
     public static File master_FILE = join(GITLET_BRANCHES_DIR, "master");
-
-    /**
-     * The sha1 value of HEAD pointer
-     */
-    public static String HEADSha1;
 
     /**
      * where store the sha1 value of HEAD as a file
@@ -148,7 +139,6 @@ public class Repository {
     private static Commit getCurrentCommit() {
         String commitSha1 = readContentsAsString(HEAD_FILE);
         // if there is no commit.
-        // this will happen when we initialize a .gitlet directory
         if (commitSha1.equals("")) {
             return null;
         }
@@ -163,7 +153,7 @@ public class Repository {
      */
     public static void commit(String message) throws IOException {
         checkInitialize();
-        HEADSha1 = readContentsAsString(HEAD_FILE);
+        String HEADSha1 = readContentsAsString(HEAD_FILE);
         commit(message, HEADSha1);
     }
 
@@ -220,8 +210,8 @@ public class Repository {
             throw new GitletException("find the newest commit failed");
         }
         // todo: may need to be modify when dealing with checkout
-        HEADSha1 = theNewestCommitFile.getName();
-        masterSha1 = HEADSha1;
+        String HEADSha1 = theNewestCommitFile.getName();
+        String masterSha1 = HEADSha1;
         writeContents(HEAD_FILE, HEADSha1);
         writeContents(master_FILE, masterSha1);
     }
@@ -233,6 +223,7 @@ public class Repository {
             }
         }
 
+        Commit currentCommit = getCurrentCommit();
     }
 
 
