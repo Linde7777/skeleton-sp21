@@ -107,7 +107,7 @@ public class Repository {
     }
 
     /**
-     * copy the file to the GITLET_STAGE_FOR_ADD_DIR
+     * copy the file in CWD to the GITLET_STAGE_FOR_ADD_DIR
      *
      * @param filename the file we want to add
      * @throws IOException
