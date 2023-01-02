@@ -84,19 +84,22 @@ public class Repository {
             GITLET_COMMITS_DIR.mkdir();
         }
 
-        File file = new File(".gitletTempFile");
+        // since add and commit must contain file,
+        // here we need to make a temp file
+        File file = join(CWD, ".gitletTempFile");
         file.createNewFile();
         add(file.getName());
         commit("init commit", null);
+        file.delete();
     }
 
     public static void add(String filename) throws IOException {
-        File file = new File(filename);
-        String fileSha1 = sha1(file);
+        File file = join(CWD, filename);
+        String fileSha1 = sha1((Object) readContents(file));
         //todo: check if this file is identical to the current commit
 
         Path src = file.toPath();
-        Path dest = GITLET_STAGE_FOR_ADD_DIR.toPath();
+        Path dest = join(GITLET_STAGE_FOR_ADD_DIR, file.getName()).toPath();
         Files.copy(src, dest, StandardCopyOption.REPLACE_EXISTING);
     }
 
@@ -140,6 +143,7 @@ public class Repository {
         }
 
         // todo: may need to be modify when dealing with checkout
+        //todo: write it into a file
         HEADSha1 = theNewestFile.getName();
         masterSha1 = HEADSha1;
 
