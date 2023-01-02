@@ -6,6 +6,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.Objects;
+import java.util.Optional;
 
 import static gitlet.Utils.*;
 
@@ -104,33 +105,44 @@ public class Repository {
     }
 
     /**
-     * initliaze a Commit class with given variable,
-     * then delete files in stageForAdd directory,
-     * then serialize Commit, which is named after its sha1 value,
-     * put it in .gitlet/commits
+     * call commit constructor, which will create a Commit instance
+     * and put itself seriliaze file in .gitlet/commits.
+     * then delete files in stageForAdd directory.
      * <p>
-     * e.g.
-     * We initialize a Commit, whose sha1 value is a154ccd,
-     * then we will serialize this commit, this serialized file
-     * will be named after a154ccd, then we put it in .gitlet/commits
      *
      * @param message
      * @param parentSha1
      * @throws IOException
      */
     private static void commit(String message, String parentSha1) throws IOException {
+        //TODO: copy from parent commit then modify its message and blobs
         Commit commit = new Commit(message, parentSha1,
-                GITLET_STAGE_FOR_ADD_DIR, GITLET_BLOBS_DIR);
+                GITLET_STAGE_FOR_ADD_DIR, GITLET_BLOBS_DIR, GITLET_COMMITS_DIR);
 
         for (File file : Objects.requireNonNull(GITLET_STAGE_FOR_ADD_DIR.listFiles())) {
             file.delete();
         }
 
-        // todo: may need to be modify when dealing with checkout
-        masterSha1 = commit.getCommitSha1();
-        HEADSha1 = commit.getCommitSha1();
+        // the newest file in GITLET_COMMITS_DIR is the commit we just created
+        // where the HEAD should point to
+        // copy from https://www.baeldung.com/java-last-modified-file
+        Path dirPath = GITLET_COMMITS_DIR.toPath();
+        Optional<Path> opPath = Files.list(dirPath).filter(p -> !Files.isDirectory(p))
+                .sorted((p1, p2) -> Long.valueOf(p2.toFile().lastModified())
+                        .compareTo(p1.toFile().lastModified()))
+                .findFirst();
 
-        writeObject(join(GITLET_COMMITS_DIR, commit.getCommitSha1()), commit);
+        File theNewestFile;
+        if (opPath.isPresent()) {
+            theNewestFile = opPath.get().toFile();
+        } else {
+            throw new GitletException("find the newest commit failed");
+        }
+
+        // todo: may need to be modify when dealing with checkout
+        HEADSha1 = theNewestFile.getName();
+        masterSha1 = HEADSha1;
+
     }
 
 
