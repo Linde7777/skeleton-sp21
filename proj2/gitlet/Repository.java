@@ -158,29 +158,38 @@ public class Repository {
     }
 
     /**
-     * call commit constructor, which will create a Commit instance
-     * then delete files in stageForAdd directory.
+     * if it is the first commit, we will call commit constructor,
+     * otherwise we will copy a commit then modify it.
+     * Then delete files in stageForAdd directory.
      * <p>
-     * after that,we will serialize it and put it in commitsDir
+     * after that, we will serialize it and put it in commitsDir
      * e.g.
      * We initialize a Commit, whose sha1 value is a154ccd,
      * then we will serialize this commit, this serialized file
      * will be named after a154ccd, then we put it in .gitlet/commits
      *
-     * @param message
-     * @param parentSha1
+     * @param message       the message of this commit
+     * @param parentSha1    the sha1 value of the parent commit
      * @throws IOException
      */
     private static void commit(String message, String parentSha1) throws IOException {
+        //TODO: it might not need a boolean isFirstCommit, just check whether parentSha1 is null
+
         checkInitialize();
         if (GITLET_STAGE_FOR_ADD_DIR.list().length == 0) {
             System.out.println("No changes added to the commit.");
             System.exit(0);
         }
-
+        Commit commit;
         //TODO: copy from parent commit then modify its message and blobs
-        Commit commit = new Commit(message, parentSha1,
-                GITLET_STAGE_FOR_ADD_DIR, GITLET_BLOBS_DIR);
+        if (parentSha1 != null) {
+            commit = getCurrentCommit();
+            commit.modifyCommit(message, parentSha1,
+                    GITLET_STAGE_FOR_ADD_DIR, GITLET_STAGE_FOR_REMOVE, GITLET_BLOBS_DIR);
+        } else {
+            commit = new Commit(message, parentSha1,
+                    GITLET_STAGE_FOR_ADD_DIR, GITLET_BLOBS_DIR, GITLET_STAGE_FOR_REMOVE);
+        }
 
         File commitSerializedFile = join(GITLET_COMMITS_DIR, "tempCommitName");
         writeObject(commitSerializedFile, commit);
@@ -193,7 +202,10 @@ public class Repository {
         for (File file : Objects.requireNonNull(GITLET_STAGE_FOR_ADD_DIR.listFiles())) {
             file.delete();
         }
+        setupBranch();
+    }
 
+    private static void setupBranch() throws IOException {
         // the newest file in GITLET_COMMITS_DIR is the commit we just created
         // where the HEAD should point to
 
