@@ -49,21 +49,16 @@ public class Commit implements Serializable {
      * //TODO: format of timestamp
      * "00:00:00 UTC, Thursday, 1 January 1970"
      * <p>
-     * then we will generate serialized file and put it in commitsDir
-     * e.g.
-     * We initialize a Commit, whose sha1 value is a154ccd,
-     * then we will serialize this commit, this serialized file
-     * will be named after a154ccd, then we put it in .gitlet/commits
+     *
      *
      * @param message         The message of the commit
      * @param parentSha1      the sha1 value of the parent of this Commit
      * @param stagedForAddDir will be used by setupBlobs(), see its comment
      * @param blobsDir        will be used by setupBlobs(), see its comment
-     * @param commitsDir      where store the serialized Commits
      * @throws IOException the exception that setupBlobs will throw
      */
     public Commit(String message, String parentSha1,
-                  File stagedForAddDir, File blobsDir, File commitsDir) throws IOException {
+                  File stagedForAddDir, File blobsDir) throws IOException {
         if (parentSha1 != null) {
             this.timeStamp = new Date();
         } else {
@@ -74,15 +69,6 @@ public class Commit implements Serializable {
         this.parentSha1 = parentSha1;
         this.blobSha1List = new LinkedList<>();
         setupBlobs(stagedForAddDir, blobsDir);
-
-        File commitSerializedFile = join(commitsDir, "tempCommitName");
-        writeObject(commitSerializedFile, this);
-        String commitSha1 = sha1((Object) readContents(commitSerializedFile));
-        File renameCommitSerializedFile = join(commitsDir, commitSha1);
-        boolean flag = commitSerializedFile.renameTo(renameCommitSerializedFile);
-        if (!flag) {
-            throw new GitletException("rename serialized Commit file failed");
-        }
 
     }
 
