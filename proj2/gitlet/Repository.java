@@ -82,6 +82,7 @@ public class Repository {
             System.exit(0);
         }
 
+        //TODO: it can may be simplified, just mkdir directly
         if (!GITLET_STAGE_FOR_ADD_DIR.exists()) {
             GITLET_STAGE_FOR_ADD_DIR.mkdir();
         }
@@ -150,9 +151,13 @@ public class Repository {
 
     /**
      * call commit constructor, which will create a Commit instance
-     * and put itself seriliaze file in .gitlet/commits.
      * then delete files in stageForAdd directory.
      * <p>
+     * after that,we will serialize it and put it in commitsDir
+     * e.g.
+     * We initialize a Commit, whose sha1 value is a154ccd,
+     * then we will serialize this commit, this serialized file
+     * will be named after a154ccd, then we put it in .gitlet/commits
      *
      * @param message
      * @param parentSha1
@@ -161,8 +166,16 @@ public class Repository {
     private static void commit(String message, String parentSha1) throws IOException {
         //TODO: copy from parent commit then modify its message and blobs
         Commit commit = new Commit(message, parentSha1,
-                GITLET_STAGE_FOR_ADD_DIR, GITLET_BLOBS_DIR, GITLET_COMMITS_DIR);
+                GITLET_STAGE_FOR_ADD_DIR, GITLET_BLOBS_DIR);
 
+        File commitSerializedFile = join(GITLET_COMMITS_DIR, "tempCommitName");
+        writeObject(commitSerializedFile, commit);
+        String commitSha1 = sha1((Object) readContents(commitSerializedFile));
+        File renameCommitSerializedFile = join(GITLET_COMMITS_DIR, commitSha1);
+        boolean flag = commitSerializedFile.renameTo(renameCommitSerializedFile);
+        if (!flag) {
+            throw new GitletException("rename serialized Commit file failed");
+        }
         for (File file : Objects.requireNonNull(GITLET_STAGE_FOR_ADD_DIR.listFiles())) {
             file.delete();
         }
