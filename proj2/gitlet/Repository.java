@@ -54,6 +54,7 @@ public class Repository {
      */
     public static final File GITLET_COMMITS_DIR = join(GITLET_DIR, "commits");
 
+    public static final File GITLET_BRANCHES_DIR = join(GITLET_DIR, "branches");
     /**
      * The sha1 value of master branch pointer
      */
@@ -62,7 +63,7 @@ public class Repository {
     /**
      * where store the sha1 value of master as file
      */
-    public static File master_FILE = join(GITLET_DIR, "master");
+    public static File master_FILE = join(GITLET_BRANCHES_DIR, "master");
 
     /**
      * The sha1 value of HEAD pointer
@@ -72,7 +73,7 @@ public class Repository {
     /**
      * where store the sha1 value of HEAD as a file
      */
-    public static final File HEAD_FILE = join(GITLET_DIR, "HEAD");
+    public static final File HEAD_FILE = join(GITLET_BRANCHES_DIR, "HEAD");
 
     private static void checkInitialize() {
         if (!GITLET_DIR.exists()) {
@@ -88,27 +89,13 @@ public class Repository {
             System.out.println("A Gitlet version-control system already exists in the current directory.");
             System.exit(0);
         }
+        GITLET_STAGE_FOR_ADD_DIR.mkdir();
+        GITLET_BLOBS_DIR.mkdir();
+        GITLET_COMMITS_DIR.mkdir();
+        GITLET_BRANCHES_DIR.mkdir();
+        master_FILE.createNewFile();
+        HEAD_FILE.createNewFile();
 
-        //TODO: it can may be simplified, just mkdir directly
-        if (!GITLET_STAGE_FOR_ADD_DIR.exists()) {
-            GITLET_STAGE_FOR_ADD_DIR.mkdir();
-        }
-
-        if (!GITLET_BLOBS_DIR.exists()) {
-            GITLET_BLOBS_DIR.mkdir();
-        }
-
-        if (!GITLET_COMMITS_DIR.exists()) {
-            GITLET_COMMITS_DIR.mkdir();
-        }
-
-        if (!master_FILE.exists()) {
-            master_FILE.createNewFile();
-        }
-
-        if (!HEAD_FILE.exists()) {
-            HEAD_FILE.createNewFile();
-        }
 
         // since add and commit must contain file,
         // here we need to make a temp file
