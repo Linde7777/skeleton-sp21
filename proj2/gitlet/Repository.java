@@ -74,6 +74,13 @@ public class Repository {
      */
     public static final File HEAD_FILE = join(GITLET_DIR, "HEAD");
 
+    private static void checkInitialize() {
+        if (!GITLET_DIR.exists()) {
+            System.out.println("Not in an initialized Gitlet directory.");
+            System.exit(0);
+        }
+    }
+
     public static void init() throws IOException {
         if (!GITLET_DIR.exists()) {
             GITLET_DIR.mkdir();
@@ -119,18 +126,14 @@ public class Repository {
      * @throws IOException
      */
     public static void add(String filename) throws IOException {
+        checkInitialize();
         File file = join(CWD, filename);
         if (!file.exists()) {
             System.out.println("File does not exist.");
             System.exit(0);
         }
 
-        // check if this file is identical to the current commit
-        String fileSha1 = sha1((Object) readContents(file));
-        String currentCommitSha1 = readContentsAsString(HEAD_FILE);
-        File commitFile = join(GITLET_COMMITS_DIR, currentCommitSha1);
-        Commit currentCommit = readObject(commitFile, Commit.class);
-        if (currentCommit.blobSha1List.contains(fileSha1)) {
+        if (checkIdenticalFile(file)) {
             System.exit(0);
         }
 
@@ -140,12 +143,39 @@ public class Repository {
     }
 
     /**
+     * check if the file added to stageForAdd directory is
+     * identical to one of the files in the current Commit
+     *
+     * @param file the file needed to be checked
+     * @return return true if file is identical to one of the files
+     * in the current Commit, false otherwise
+     */
+    private static boolean checkIdenticalFile(File file) {
+        String fileSha1 = sha1((Object) readContents(file));
+        String currentCommitSha1 = readContentsAsString(HEAD_FILE);
+
+        // if the content in HEAD_FILE is empty,
+        // that means it is init() call add(),
+        // in this case, we don't need to care about identical file,
+        // since nothing has been committed yet.
+        if (currentCommitSha1.equals("")) {
+            return false;
+        }
+
+        File commitFile = join(GITLET_COMMITS_DIR, currentCommitSha1);
+        Commit currentCommit = readObject(commitFile, Commit.class);
+        return currentCommit.blobSha1List.contains(fileSha1);
+    }
+
+    /**
      * notice that it is public method
      *
      * @param message
      * @throws IOException
      */
     public static void commit(String message) throws IOException {
+        checkInitialize();
+        HEADSha1 = readContentsAsString(HEAD_FILE);
         commit(message, HEADSha1);
     }
 
@@ -164,6 +194,13 @@ public class Repository {
      * @throws IOException
      */
     private static void commit(String message, String parentSha1) throws IOException {
+        checkInitialize();
+        File[] files = GITLET_STAGE_FOR_ADD_DIR.listFiles();
+        if (files == null) {
+            System.out.println("No changes added to the commit.");
+            System.exit(0);
+        }
+
         //TODO: copy from parent commit then modify its message and blobs
         Commit commit = new Commit(message, parentSha1,
                 GITLET_STAGE_FOR_ADD_DIR, GITLET_BLOBS_DIR);
@@ -189,16 +226,14 @@ public class Repository {
                 .sorted((p1, p2) -> Long.valueOf(p2.toFile().lastModified())
                         .compareTo(p1.toFile().lastModified()))
                 .findFirst();
-        File theNewestFile;
+        File theNewestCommitFile;
         if (opPath.isPresent()) {
-            theNewestFile = opPath.get().toFile();
+            theNewestCommitFile = opPath.get().toFile();
         } else {
             throw new GitletException("find the newest commit failed");
         }
-
         // todo: may need to be modify when dealing with checkout
-        //todo: write it into a file
-        HEADSha1 = theNewestFile.getName();
+        HEADSha1 = theNewestCommitFile.getName();
         masterSha1 = HEADSha1;
         writeContents(HEAD_FILE, HEADSha1);
         writeContents(master_FILE, masterSha1);
