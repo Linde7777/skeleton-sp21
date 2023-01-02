@@ -173,8 +173,6 @@ public class Repository {
      * @throws IOException
      */
     private static void commit(String message, String parentSha1) throws IOException {
-        //TODO: it might not need a boolean isFirstCommit, just check whether parentSha1 is null
-
         checkInitialize();
         if (GITLET_STAGE_FOR_ADD_DIR.list().length == 0) {
             System.out.println("No changes added to the commit.");
