@@ -118,7 +118,7 @@ public class Commit implements Serializable {
             }
 
             Path src = file.toPath();
-            Path dest = blobDir.toPath();
+            Path dest = join(blobDir, file.getName()).toPath();
             Files.copy(src, dest, StandardCopyOption.REPLACE_EXISTING);
         }
     }
