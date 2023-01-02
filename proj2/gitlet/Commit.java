@@ -43,13 +43,12 @@ public class Commit implements Serializable {
     private String parentSha1;
 
     /**
-     * it will be only called when we initialize a gitlet repo
-     * initialize Commit with given variable,
-     * the timestamp will be initialized by the current time
-     * if the parent is null, the timestamp will be set as
+     * it will be only called when we initialize a gitlet repo,
+     * i.e. when we create the first commit.
+     * it will initialize Commit with given variable,
+     * the timestamp will be set as
      * //TODO: format of timestamp
      * "00:00:00 UTC, Thursday, 1 January 1970"
-     * this function will be only used to create the first commit
      * <p>
      *
      * @param message         The message of the commit
@@ -85,7 +84,6 @@ public class Commit implements Serializable {
     private void removeBlobs(File stagedForRemoveDir, File blobsDir) {
 
     }
-
 
     /**
      * this function will create blobs from the files in stagedForAdd directory,
