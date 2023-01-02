@@ -53,8 +53,7 @@ public class Dog implements Serializable {
      * @return Dog read from file
      */
     public static Dog fromFile(String name) {
-        File dogFile = Utils.join(CWD, ".capers",
-                "dogs", name);
+        File dogFile = Utils.join(DOG_FOLDER, name);
         return Utils.readObject(dogFile, Dog.class);
     }
 
@@ -75,8 +74,7 @@ public class Dog implements Serializable {
         if (!DOG_FOLDER.exists()) {
             DOG_FOLDER.mkdir();
         }
-        File dogFile = Utils.join(CWD,
-                ".capers", "dogs", this.name);
+        File dogFile = Utils.join(DOG_FOLDER, this.name);
         writeObject(dogFile, this);
     }
 
