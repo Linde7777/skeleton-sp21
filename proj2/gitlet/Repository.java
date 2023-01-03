@@ -168,8 +168,8 @@ public class Repository {
      * then we will serialize this commit, this serialized file
      * will be named after a154ccd, then we put it in .gitlet/commits
      *
-     * @param message       the message of this commit
-     * @param parentSha1    the sha1 value of the parent commit
+     * @param message    the message of this commit
+     * @param parentSha1 the sha1 value of the parent commit
      * @throws IOException
      */
     private static void commit(String message, String parentSha1) throws IOException {
@@ -246,7 +246,7 @@ public class Repository {
             System.exit(0);
         }
         for (String blobDirPath : currentCommit.blobSha1List) {
-            File file = getTheOnlyFileInDir(blobDirPath);
+            File file = getTheOnlyFileInDir(GITLET_BLOBS_DIR.toString() + blobDirPath);
             if (file.getName().equals(filename)) {
                 Path src = file.toPath();
                 Path dest = join(GITLET_STAGE_FOR_REMOVE, filename).toPath();
