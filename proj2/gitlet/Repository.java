@@ -243,16 +243,14 @@ public class Repository {
             }
         }
 
+        boolean findFileInCurrentCommit = false;
         Commit currentCommit = getCurrentCommit();
-        if (!findFileInStageForAddDir || currentCommit == null) {
-            System.out.println("No reason to remove the file.");
-            System.exit(0);
-        }
         for (String currCommitBlobSha1 : currentCommit.blobSha1List) {
             File currCommitBlobFile =
                     getTheOnlyFileInDir(join(GITLET_BLOBS_DIR, currCommitBlobSha1));
 
             if (currCommitBlobFile.getName().equals(filename)) {
+                findFileInCurrentCommit = true;
                 Path src = currCommitBlobFile.toPath();
                 Path dest = join(GITLET_STAGE_FOR_REMOVE, filename).toPath();
                 Files.copy(src, dest, StandardCopyOption.REPLACE_EXISTING);
@@ -264,6 +262,10 @@ public class Repository {
             }
         }
 
+        if (!findFileInStageForAddDir || !findFileInCurrentCommit) {
+            System.out.println("No reason to remove the file.");
+            System.exit(0);
+        }
     }
 
 
