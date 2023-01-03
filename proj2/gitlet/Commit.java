@@ -8,6 +8,8 @@ import java.io.Serializable;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
+import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
 import java.util.Date;
 import java.util.LinkedList;
 import java.util.Objects;
@@ -28,10 +30,18 @@ public class Commit implements Serializable {
      */
     private String message;
 
+    public String getMessage() {
+        return message;
+    }
+
     /**
      * The time when this Commit was created.
      */
     private Date timeStamp;
+
+    public Date getTimeStamp() {
+        return timeStamp;
+    }
 
     /**
      * where store the sha1 value of blobs
@@ -42,6 +52,10 @@ public class Commit implements Serializable {
      * The sha1 value of the parent of this Commit.
      */
     private String parentSha1;
+
+    public String getParentSha1() {
+        return parentSha1;
+    }
 
     /**
      * it will be only called when we initialize a gitlet repo,
