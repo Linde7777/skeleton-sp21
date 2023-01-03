@@ -48,8 +48,7 @@ public class Commit implements Serializable {
      * i.e. when we create the first commit.
      * it will initialize Commit with given variable,
      * the timestamp will be set as
-     * //TODO: format of timestamp
-     * "00:00:00 UTC, Thursday, 1 January 1970"
+     * Thu Jan 01 00:00:00 CST 1970
      * <p>
      *
      * @param message         The message of the commit
