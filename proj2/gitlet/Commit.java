@@ -13,6 +13,7 @@ import java.util.LinkedList;
 import java.util.Objects;
 
 import static gitlet.Utils.*;
+import static gitlet.StudentUtils.*;
 
 /**
  * Represents a gitlet commit object.
@@ -81,8 +82,26 @@ public class Commit implements Serializable {
     }
 
 
+    /**
+     * remind that Repository.remove() have make sure that the
+     * files in stagedForRemoveDir exist in the current commit.
+     *
+     * do distinguish them:
+     * blobsDir is .gitlet/blobs/
+     * blobDir is .gitlet/blobs/[sha1 value]
+     *
+     * @param stagedForRemoveDir
+     * @param blobsDir
+     */
     private void removeBlobs(File stagedForRemoveDir, File blobsDir) {
-
+        for (File fileInStagedDir : stagedForRemoveDir.listFiles()) {
+            String fileInStagedDirSha1 = sha1(readContents(fileInStagedDir));
+            File blobDir = join(blobsDir, fileInStagedDirSha1);
+            File fileInBlobDir =
+                    getTheOnlyFileInDir(blobDir);
+            fileInBlobDir.delete();
+            blobDir.delete();
+        }
     }
 
     /**
