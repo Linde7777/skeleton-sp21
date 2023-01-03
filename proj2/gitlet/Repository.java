@@ -296,10 +296,21 @@ public class Repository {
             System.out.println("commit " + currentCommitSha1);
             // why time zone offset is deprecated?
             Date date = currentCommit.getTimeStamp();
-            //TODO: it seems that there is a system bug, can't display weekday and month
-            SimpleDateFormat formatter = new SimpleDateFormat("E MMM dd hh:mm:ss yyyy Z");
+
+            String formattedDateString = String.format("%1$ta %1$tb %1$td %1$tk:%1$tM:%1$tS %1$tY %1$tz", date);
+            /*
+            the code above is equal to the following code:
+            SimpleDateFormat formatter =
+                                 new SimpleDateFormat("E MMM dd hh:mm:ss yyyy Z");
             String formattedDateString = formatter.format(date);
-            //String formattedDateString = String.format("%1$ta %1$tb %1$td %1$tk:%1$tM:%1$tS %1$tY %1$tz", date);
+
+            Since gitlet document say I should use java.util.formatter,
+            I didn't use SimpleDateFormat.
+
+            notice that in Windows's git bash, it might have problem to display
+            weekday and month, you can try to run this program on Ubuntu
+            */
+
             System.out.println("Date: " + formattedDateString);
             System.out.println(currentCommit.getMessage());
             System.out.println();
