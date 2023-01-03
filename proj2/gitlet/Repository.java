@@ -235,14 +235,16 @@ public class Repository {
      * @param filename the name of the file that we want to remove
      */
     public static void remove(String filename) throws IOException {
+        boolean findFileInStageForAddDir = false;
         for (File file : Objects.requireNonNull(GITLET_STAGE_FOR_ADD_DIR.listFiles())) {
             if (filename.equals(file.getName())) {
+                findFileInStageForAddDir = true;
                 file.delete();
             }
         }
 
         Commit currentCommit = getCurrentCommit();
-        if (currentCommit == null) {
+        if (!findFileInStageForAddDir || currentCommit == null) {
             System.out.println("No reason to remove the file.");
             System.exit(0);
         }
