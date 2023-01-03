@@ -47,6 +47,9 @@ public class Main {
                 String filenameForRemove = args[1];
                 Repository.remove(filenameForRemove);
                 break;
+            case "log":
+                Repository.log();
+                break;
             default:
                 System.out.println("No command with that name exists.");
                 break;
