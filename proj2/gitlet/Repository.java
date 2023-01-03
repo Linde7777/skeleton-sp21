@@ -9,6 +9,7 @@ import java.nio.file.StandardCopyOption;
 import java.util.Objects;
 import java.util.Optional;
 
+import static gitlet.StudentUtils.getTheOnlyFileInDir;
 import static gitlet.Utils.*;
 
 // TODO: any imports you need here
@@ -63,7 +64,6 @@ public class Repository {
      * The .gitlet/branches directory, where store the master, HEAD files
      */
     public static final File GITLET_BRANCHES_DIR = join(GITLET_DIR, "branches");
-
 
     /**
      * where store the sha1 value of master as file
@@ -229,7 +229,8 @@ public class Repository {
     /**
      * If the file exists in GITLET_STAGE_FOR_ADD_DIR, we remove it.
      * If the file is tracked in the current commit, stage it for removal
-     * and remove the file from CWD if the user has not already done so
+     * and remove the file from working directory if the user has not already done so
+     * (do not remove it unless it is tracked in the current commit).
      *
      * @param filename the name of the file that we want to remove
      */
@@ -245,37 +246,23 @@ public class Repository {
             System.out.println("No reason to remove the file.");
             System.exit(0);
         }
-        for (String blobDirPath : currentCommit.blobSha1List) {
-            File file = getTheOnlyFileInDir(GITLET_BLOBS_DIR.toString() + blobDirPath);
-            if (file.getName().equals(filename)) {
-                Path src = file.toPath();
+        for (String currCommitBlobSha1 : currentCommit.blobSha1List) {
+            File currCommitBlobFile =
+                    getTheOnlyFileInDir(join(GITLET_BLOBS_DIR, currCommitBlobSha1));
+
+            if (currCommitBlobFile.getName().equals(filename)) {
+                Path src = currCommitBlobFile.toPath();
                 Path dest = join(GITLET_STAGE_FOR_REMOVE, filename).toPath();
                 Files.copy(src, dest, StandardCopyOption.REPLACE_EXISTING);
+
+                File file = join(CWD, filename);
+                if (file.exists()) {
+                    file.delete();
+                }
             }
         }
 
-
     }
 
-    /**
-     * If we has already design that in certain directory,
-     * there is only one file, we call this function to get that file
-     *
-     * @param dirString the directory path, e.g. "home/john/folder1"
-     * @return the only file in the directory
-     */
-    private static File getTheOnlyFileInDir(String dirString) {
-        File dir = new File(dirString);
-        if (dir.isDirectory()) {
-            File[] files = dir.listFiles();
-            if (files.length != 1) {
-                throw new GitletException("This directory has more than one file");
-            } else {
-                return files[0];
-            }
-        } else {
-            throw new GitletException("This is not a directory");
-        }
-    }
 
 }
