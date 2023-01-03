@@ -40,12 +40,13 @@ public class Main {
                 Repository.add(filenameForAdd);
                 break;
             case "commit":
-                String message=args[1];
+                String message = args[1];
                 Repository.commit(message);
                 break;
             case "rm":
-                String filenameForRemove=args[1];
+                String filenameForRemove = args[1];
                 Repository.remove(filenameForRemove);
+                break;
             default:
                 System.out.println("No command with that name exists.");
                 break;

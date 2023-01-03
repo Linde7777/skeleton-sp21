@@ -236,6 +236,7 @@ public class Repository {
      */
     public static void remove(String filename) throws IOException {
         boolean findFileInStageForAddDir = false;
+        File[] files=GITLET_STAGE_FOR_ADD_DIR.listFiles();
         for (File file : Objects.requireNonNull(GITLET_STAGE_FOR_ADD_DIR.listFiles())) {
             if (filename.equals(file.getName())) {
                 findFileInStageForAddDir = true;
