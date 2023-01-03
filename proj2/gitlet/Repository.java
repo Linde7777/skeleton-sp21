@@ -262,7 +262,7 @@ public class Repository {
             }
         }
 
-        if (!findFileInStageForAddDir || !findFileInCurrentCommit) {
+        if (!findFileInStageForAddDir && !findFileInCurrentCommit) {
             System.out.println("No reason to remove the file.");
             System.exit(0);
         }
