@@ -174,12 +174,13 @@ public class Repository {
      */
     private static void commit(String message, String parentSha1) throws IOException {
         checkInitialize();
-        if (GITLET_STAGE_FOR_ADD_DIR.list().length == 0) {
+        if (GITLET_STAGE_FOR_ADD_DIR.list().length == 0
+                && GITLET_STAGE_FOR_REMOVE.list().length == 0) {
             System.out.println("No changes added to the commit.");
             System.exit(0);
         }
+
         Commit commit;
-        //TODO: copy from parent commit then modify its message and blobs
         if (parentSha1 != null) {
             commit = getCurrentCommit();
             commit.modifyCommit(message, parentSha1,
@@ -236,32 +237,40 @@ public class Repository {
      */
     public static void remove(String filename) throws IOException {
         boolean findFileInStageForAddDir = false;
-        File[] files=GITLET_STAGE_FOR_ADD_DIR.listFiles();
-        for (File file : Objects.requireNonNull(GITLET_STAGE_FOR_ADD_DIR.listFiles())) {
-            if (filename.equals(file.getName())) {
-                findFileInStageForAddDir = true;
-                file.delete();
+        File[] filesInStageForAddDir = GITLET_STAGE_FOR_ADD_DIR.listFiles();
+        if (filesInStageForAddDir != null) {
+            for (File file : filesInStageForAddDir) {
+                if (filename.equals(file.getName())) {
+                    findFileInStageForAddDir = true;
+                    file.delete();
+                }
             }
         }
 
         boolean findFileInCurrentCommit = false;
         Commit currentCommit = getCurrentCommit();
-        for (String currCommitBlobSha1 : currentCommit.blobSha1List) {
-            File currCommitBlobFile =
-                    getTheOnlyFileInDir(join(GITLET_BLOBS_DIR, currCommitBlobSha1));
+        if (currentCommit != null) {
+            for (String currCommitBlobSha1 : currentCommit.blobSha1List) {
+                File currCommitBlobFile =
+                        getTheOnlyFileInDir(join(GITLET_BLOBS_DIR, currCommitBlobSha1));
 
-            if (currCommitBlobFile.getName().equals(filename)) {
-                findFileInCurrentCommit = true;
-                Path src = currCommitBlobFile.toPath();
-                Path dest = join(GITLET_STAGE_FOR_REMOVE, filename).toPath();
-                Files.copy(src, dest, StandardCopyOption.REPLACE_EXISTING);
+                if (currCommitBlobFile.getName().equals(filename)) {
+                    findFileInCurrentCommit = true;
+                    Path src = currCommitBlobFile.toPath();
+                    Path dest = join(GITLET_STAGE_FOR_REMOVE, filename).toPath();
+                    Files.copy(src, dest, StandardCopyOption.REPLACE_EXISTING);
 
-                File file = join(CWD, filename);
-                if (file.exists()) {
-                    file.delete();
+                    File file = join(CWD, filename);
+                    if (file.exists()) {
+                        file.delete();
+                    }
+                    // since we have found it, we don't need to search anymore
+                    break;
                 }
+
             }
         }
+
 
         if (!findFileInStageForAddDir && !findFileInCurrentCommit) {
             System.out.println("No reason to remove the file.");
