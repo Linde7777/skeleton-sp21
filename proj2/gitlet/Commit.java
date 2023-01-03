@@ -54,9 +54,8 @@ public class Commit implements Serializable {
      *
      * @param message         The message of the commit
      * @param parentSha1      the sha1 value of the parent of this Commit
-     * @param stagedForAddDir will be used by setupBlobs(), see its comment
-     * @param blobsDir        will be used by setupBlobs(), see its comment
-     * @throws IOException the exception that setupBlobs will throw
+     * @param stagedForAddDir will be used by addBlobs(), see its comment
+     * @param blobsDir        will be used by addBlobs(), see its comment
      */
     public Commit(String message, String parentSha1,
                   File stagedForAddDir, File blobsDir, File stageForRemove) throws IOException {
@@ -83,19 +82,18 @@ public class Commit implements Serializable {
 
 
     /**
-     * remind that Repository.remove() have make sure that the
+     * if there are files in stageForRemoveDir,
+     * remove them from the current Commit.
+     * recall that Repository.remove() have make sure that the
      * files in stagedForRemoveDir exist in the current commit.
-     *
+     * <p>
      * do distinguish them:
      * blobsDir is .gitlet/blobs/
      * blobDir is .gitlet/blobs/[sha1 value]
-     *
-     * @param stagedForRemoveDir
-     * @param blobsDir
      */
     private void removeBlobs(File stagedForRemoveDir, File blobsDir) {
-        for (File fileInStagedDir : stagedForRemoveDir.listFiles()) {
-            String fileInStagedDirSha1 = sha1(readContents(fileInStagedDir));
+        for (File fileInStagedDir : Objects.requireNonNull(stagedForRemoveDir.listFiles())) {
+            String fileInStagedDirSha1 = sha1((Object) readContents(fileInStagedDir));
             File blobDir = join(blobsDir, fileInStagedDirSha1);
             File fileInBlobDir =
                     getTheOnlyFileInDir(blobDir);
@@ -128,27 +126,22 @@ public class Commit implements Serializable {
             String fileSha1 = sha1((Object) readContents(file));
             if (!this.blobSha1List.contains(fileSha1)) {
                 this.blobSha1List.add(fileSha1);
-                addFileInCombinedDir(blobsDir, fileSha1, file);
+                addFileInDir(join(blobsDir, fileSha1), file);
             }
         }
     }
 
     /**
      * create a new directory mainDir/subDir, and add file to it.
-     *
-     * @param mainDir
-     * @param subDir
-     * @param file
      */
-    private void addFileInCombinedDir(File mainDir, String subDir, File file) throws IOException {
-        File blobDir = join(mainDir, subDir);
-        if (!blobDir.exists()) {
-            blobDir.mkdir();
+    private void addFileInDir(File dir, File file) throws IOException {
+        if (!dir.exists()) {
+            dir.mkdir();
         } else {
-            throw new GitletException("sha1 value conflict: " + subDir);
+            throw new GitletException("sha1 value conflict");
         }
         Path src = file.toPath();
-        Path dest = join(blobDir, file.getName()).toPath();
+        Path dest = join(dir, file.getName()).toPath();
         Files.copy(src, dest, StandardCopyOption.REPLACE_EXISTING);
     }
 }
