@@ -36,13 +36,16 @@ public class Main {
                 Repository.init();
                 break;
             case "add":
-                String filename = args[1];
-                Repository.add(filename);
+                String filenameForAdd = args[1];
+                Repository.add(filenameForAdd);
                 break;
             case "commit":
                 String message=args[1];
                 Repository.commit(message);
                 break;
+            case "rm":
+                String filenameForRemove=args[1];
+                Repository.remove(filenameForRemove);
             default:
                 System.out.println("No command with that name exists.");
                 break;
