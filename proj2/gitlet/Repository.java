@@ -2,12 +2,11 @@ package gitlet;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
-import java.util.Objects;
-import java.util.Optional;
+import java.text.SimpleDateFormat;
+import java.util.*;
 
 import static gitlet.StudentUtils.getTheOnlyFileInDir;
 import static gitlet.Utils.*;
@@ -126,7 +125,7 @@ public class Repository {
         // so we don't need to care about whether the file we add is identical
         // to one of the files in the current Commit
         String fileSha1 = sha1((Object) readContents(file));
-        Commit currentCommit = getCurrentCommit();
+        Commit currentCommit = getHeadCommit();
         if (currentCommit != null && currentCommit.blobSha1List.contains(fileSha1)) {
             System.exit(0);
         }
@@ -136,13 +135,22 @@ public class Repository {
         Files.copy(src, dest, StandardCopyOption.REPLACE_EXISTING);
     }
 
-    private static Commit getCurrentCommit() {
-        String commitSha1 = readContentsAsString(HEAD_FILE);
+    /**
+     * the sha1 value of current commit is store at HEAD_FILE
+     *
+     * @return
+     */
+    private static Commit getHeadCommit() {
+        String commitSha1 = getHeadCommitSha1();
         // if there is no commit.
         if (commitSha1.equals("")) {
             return null;
         }
         return readObject(join(GITLET_COMMITS_DIR, commitSha1), Commit.class);
+    }
+
+    private static String getHeadCommitSha1() {
+        return readContentsAsString(HEAD_FILE);
     }
 
     /**
@@ -182,7 +190,7 @@ public class Repository {
 
         Commit commit;
         if (parentSha1 != null) {
-            commit = getCurrentCommit();
+            commit = getHeadCommit();
             commit.modifyCommit(message, parentSha1,
                     GITLET_STAGE_FOR_ADD_DIR, GITLET_STAGE_FOR_REMOVE, GITLET_BLOBS_DIR);
         } else {
@@ -248,7 +256,7 @@ public class Repository {
         }
 
         boolean findFileInCurrentCommit = false;
-        Commit currentCommit = getCurrentCommit();
+        Commit currentCommit = getHeadCommit();
         if (currentCommit != null) {
             for (String currCommitBlobSha1 : currentCommit.blobSha1List) {
                 File currCommitBlobFile =
@@ -271,12 +279,33 @@ public class Repository {
             }
         }
 
-
         if (!findFileInStageForAddDir && !findFileInCurrentCommit) {
             System.out.println("No reason to remove the file.");
             System.exit(0);
         }
     }
 
+    public static void log() {
+        //todo: dealing with merge
+
+        String currentCommitSha1 = getHeadCommitSha1();
+        while (currentCommitSha1 != null) {
+            File currentCommitFile = join(GITLET_COMMITS_DIR, currentCommitSha1);
+            Commit currentCommit = readObject(currentCommitFile, Commit.class);
+            System.out.println("===");
+            System.out.println("commit " + currentCommitSha1);
+            // why time zone offset is deprecated?
+            Date date = currentCommit.getTimeStamp();
+            //TODO: it seems that there is a system bug, can't display weekday and month
+            SimpleDateFormat formatter = new SimpleDateFormat("E MMM dd hh:mm:ss yyyy Z");
+            String formattedDateString = formatter.format(date);
+            //String formattedDateString = String.format("%1$ta %1$tb %1$td %1$tk:%1$tM:%1$tS %1$tY %1$tz", date);
+            System.out.println("Date: " + formattedDateString);
+            System.out.println(currentCommit.getMessage());
+            System.out.println();
+            currentCommitSha1 = currentCommit.getParentSha1();
+        }
+
+    }
 
 }
