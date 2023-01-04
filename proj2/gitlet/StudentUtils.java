@@ -16,7 +16,7 @@ public class StudentUtils {
     }
 
     /**
-     * @deprecated in the previous version, this function
+     * in the previous version, this function
      * is used to get the newest file in the .gitlet/commits
      */
     public static File getTheNewestFileInDir(File dir) throws IOException {
