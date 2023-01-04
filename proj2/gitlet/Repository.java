@@ -337,8 +337,17 @@ public class Repository {
             */
     }
 
-    public static void branch() {
+    public static void branch(String branchName) throws IOException {
+        File branchFile = join(GITLET_BRANCHES_DIR, branchName);
+        if (!branchFile.exists()) {
+            branchFile.createNewFile();
+        } else {
+            System.out.println("A branch with that name already exists.");
+            System.exit(0);
+        }
 
+        String currentCommitSha1 = getHeadCommitSha1();
+        writeContents(branchFile, currentCommitSha1);
     }
 
 }
