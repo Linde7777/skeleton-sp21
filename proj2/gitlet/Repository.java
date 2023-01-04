@@ -304,17 +304,15 @@ public class Repository {
         while (currentCommitSha1 != null) {
             File currentCommitFile = join(GITLET_COMMITS_DIR, currentCommitSha1);
             Commit currentCommit = readObject(currentCommitFile, Commit.class);
-            System.out.println("===");
-            System.out.println("commit " + currentCommitSha1);
-            // why time zone offset is deprecated?
             Date date = currentCommit.getTimeStamp();
-
             String formattedDateString = formatDate(date);
 
-
+            System.out.println("===");
+            System.out.println("commit " + currentCommitSha1);
             System.out.println("Date: " + formattedDateString);
             System.out.println(currentCommit.getMessage());
             System.out.println();
+
             currentCommitSha1 = currentCommit.getParentSha1();
         }
 
