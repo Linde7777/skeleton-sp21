@@ -253,6 +253,8 @@ public class Repository {
     public static void remove(String filename) throws IOException {
         boolean findFileInStageForAddDir = false;
         File[] filesInStageForAddDir = GITLET_STAGE_FOR_ADD_DIR.listFiles();
+        // if filesInStageForAddDir is null, it is ok, we don't need to do anything,
+        // and then we move down to check if we need to delete file from current commit.
         if (filesInStageForAddDir != null) {
             for (File file : filesInStageForAddDir) {
                 if (filename.equals(file.getName())) {
@@ -264,6 +266,8 @@ public class Repository {
 
         boolean findFileInCurrentCommit = false;
         Commit currentCommit = getHeadCommit();
+
+        // if currentCommit is null, it is ok, we don't need to do anything
         if (currentCommit != null) {
             for (String currCommitBlobSha1 : currentCommit.blobSha1List) {
                 File currCommitBlobFile =
