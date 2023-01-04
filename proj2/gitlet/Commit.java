@@ -67,8 +67,6 @@ public class Commit implements Serializable {
      *
      * @param message         The message of the commit
      * @param parentSha1      the sha1 value of the parent of this Commit
-     * @param stagedForAddDir will be used by addBlobs(), see its comment
-     * @param blobsDir        will be used by addBlobs(), see its comment
      */
     public Commit(String message, String parentSha1) {
         if (parentSha1 == null) {
