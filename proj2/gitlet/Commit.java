@@ -102,12 +102,14 @@ public class Commit implements Serializable {
      * and its sha1 value is a127db
      * when this function is executed, in the .gitlet/blobs/a127db directory,
      * there is a hello.txt(version 2)
+     * <p>
+     * do distinguish them:
+     * blobsDir is .gitlet/blobs/
+     * blobDir is .gitlet/blobs/[sha1 value]
+     * <p>
      *
      * @param stagedForAddDir the files in this directory will be committed
      * @param blobsDir        where store the blobs
-     *                        do distinguish them:
-     *                        blobsDir is .gitlet/blobs/
-     *                        blobDir is .gitlet/blobs/[sha1 value]
      */
     public void addBlobs(File stagedForAddDir, File blobsDir) throws IOException {
         for (File stagedFile : Objects.requireNonNull(stagedForAddDir.listFiles())) {
@@ -133,9 +135,6 @@ public class Commit implements Serializable {
         }
     }
 
-    /**
-     * create a new directory mainDir/subDir, and add file to it.
-     */
     private void addFileInDir(File dir, File file) throws IOException {
         if (!dir.exists()) {
             dir.mkdir();
