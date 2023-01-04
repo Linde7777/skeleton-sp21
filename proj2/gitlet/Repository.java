@@ -21,14 +21,6 @@ import static gitlet.Utils.*;
  */
 public class Repository {
     /**
-     * TODO: add instance variables here.
-     * <p>
-     * List all instance variables of the Repository class here with a useful
-     * comment above them describing what that variable represents and how that
-     * variable is used. We've provided two examples for you.
-     */
-
-    /**
      * The current working directory.
      */
     public static final File CWD = new File(System.getProperty("user.dir"));
@@ -101,16 +93,15 @@ public class Repository {
         GITLET_ACTIVE_BRANCH_FILE.createNewFile();
         master_FILE.createNewFile();
         HEAD_FILE.createNewFile();
-
         writeContents(GITLET_ACTIVE_BRANCH_FILE, "master");
+        setUpFirstCommit();
+    }
 
-        // since add and commit must contain file,
-        // here we need to make a temp file
-        File file = join(CWD, ".gitletTempFile");
-        file.createNewFile();
-        add(file.getName());
-        commit("init commit", null);
-        file.delete();
+    private static void setUpFirstCommit() throws IOException {
+        String message = "init commit";
+        Commit commit = new Commit(message);
+        String commitSha1 = serializeCommit(commit);
+        setupBranch(commitSha1);
     }
 
     /**
@@ -133,7 +124,7 @@ public class Repository {
         // so we don't need to care about whether the file we add is identical
         // to one of the files in the current Commit
         String fileSha1 = sha1((Object) readContents(file));
-        Commit currentCommit = getHeadCommit();
+        Commit currentCommit = getCommitBySha1(getHeadCommitSha1());
         if (currentCommit != null && currentCommit.blobSha1List.contains(fileSha1)) {
             System.exit(0);
         }
@@ -141,11 +132,6 @@ public class Repository {
         Path src = file.toPath();
         Path dest = join(GITLET_STAGE_FOR_ADD_DIR, file.getName()).toPath();
         Files.copy(src, dest, StandardCopyOption.REPLACE_EXISTING);
-    }
-
-    private static Commit getHeadCommit() {
-        String headSha1 = getHeadCommitSha1();
-        return getCommitBySha1(headSha1);
     }
 
     private static String getHeadCommitSha1() {
@@ -169,10 +155,10 @@ public class Repository {
      * @param message
      * @throws IOException
      */
-    public static void commit(String message) throws IOException {
+    public static void setUpCommit(String message) throws IOException {
         checkInitialize();
         String HEADSha1 = readContentsAsString(HEAD_FILE);
-        commit(message, HEADSha1);
+        setUpCommit(message, HEADSha1);
     }
 
     /**
@@ -189,9 +175,8 @@ public class Repository {
      *
      * @param message    the message of this commit
      * @param parentSha1 the sha1 value of the parent commit
-     * @throws IOException
      */
-    private static void commit(String message, String parentSha1) throws IOException {
+    private static void setUpCommit(String message, String parentSha1) throws IOException {
         checkInitialize();
         if (GITLET_STAGE_FOR_ADD_DIR.list().length == 0
                 && GITLET_STAGE_FOR_REMOVE.list().length == 0) {
@@ -199,17 +184,11 @@ public class Repository {
             System.exit(0);
         }
 
-        Commit commit;
-        if (parentSha1 != null) {
-            commit = getHeadCommit();
-            assert commit != null;
-            commit.modifyCommit(message, parentSha1);
-            commit.addBlobs(GITLET_STAGE_FOR_ADD_DIR, GITLET_BLOBS_DIR);
-            commit.removeBlobs(GITLET_STAGE_FOR_REMOVE);
-        } else {
-            commit = new Commit(message);
-            commit.addBlobs(GITLET_STAGE_FOR_ADD_DIR, GITLET_BLOBS_DIR);
-        }
+        Commit commit = getCommitBySha1(getHeadCommitSha1());
+        assert commit != null;
+        commit.modifyCommit(message, parentSha1);
+        commit.addBlobs(GITLET_STAGE_FOR_ADD_DIR, GITLET_BLOBS_DIR);
+        commit.removeBlobs(GITLET_STAGE_FOR_REMOVE);
 
         String commitSha1 = serializeCommit(commit);
 
@@ -218,6 +197,7 @@ public class Repository {
         deleteAllFilesInDir(GITLET_STAGE_FOR_ADD_DIR);
         deleteAllFilesInDir(GITLET_STAGE_FOR_REMOVE);
     }
+
 
     /**
      * serialize a Commit class in the GITLET_COMMITS_DIR/[first 2 sha1 digit]/[40 bit sha1 digit]
@@ -279,7 +259,7 @@ public class Repository {
         }
 
         boolean findFileInCurrentCommit = false;
-        Commit currentCommit = getHeadCommit();
+        Commit currentCommit = getCommitBySha1(getHeadCommitSha1());
 
         // if currentCommit is null, it is ok, we don't need to do anything
         // then we move down to check the next condition.
@@ -386,13 +366,15 @@ public class Repository {
      * The new version of the file is not staged.
      */
     public static void checkoutFilename(String filename) throws IOException {
-        Commit commit = getHeadCommit();
+        Commit commit = getCommitBySha1(getHeadCommitSha1());
         for (String blobSha1 : commit.blobSha1List) {
             // recall that blob are stored like: .gitlet/blobs/40 bit sha1 value/hello.txt
             File blobFile = getTheOnlyFileInDir(join(GITLET_BLOBS_DIR, blobSha1));
-            Path src = blobFile.toPath();
-            Path dest = join(CWD, blobFile.getName()).toPath();
-            Files.copy(src, dest, StandardCopyOption.REPLACE_EXISTING);
+            if(blobFile.getName().equals(filename)){
+                Path src = blobFile.toPath();
+                Path dest = join(CWD, blobFile.getName()).toPath();
+                Files.copy(src, dest, StandardCopyOption.REPLACE_EXISTING);
+            }
         }
     }
 
