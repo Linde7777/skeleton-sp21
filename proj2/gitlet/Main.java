@@ -63,6 +63,14 @@ public class Main {
                     Repository.checkoutBranchName(branchName);
                 }
                 break;
+            case "branch":
+                String branchToBeCreatedName = args[1];
+                Repository.branch(branchToBeCreatedName);
+                break;
+            case "rm-branch":
+                String branchToBeRemovedName = args[1];
+                Repository.removeBranch(branchToBeRemovedName);
+
             default:
                 System.out.println("No command with that name exists.");
                 break;
