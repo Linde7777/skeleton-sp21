@@ -105,6 +105,9 @@ public class Commit implements Serializable {
      *
      * @param stagedForAddDir the files in this directory will be committed
      * @param blobsDir        where store the blobs
+     * do distinguish them:
+     * blobsDir is .gitlet/blobs/
+     * blobDir is .gitlet/blobs/[sha1 value]
      */
     public void addBlobs(File stagedForAddDir, File blobsDir) throws IOException {
         for (File stagedFile : Objects.requireNonNull(stagedForAddDir.listFiles())) {
@@ -150,9 +153,6 @@ public class Commit implements Serializable {
      * recall that Repository.remove() have make sure that the
      * files in stagedForRemoveDir exist in the current commit.
      * <p>
-     * do distinguish them:
-     * blobsDir is .gitlet/blobs/
-     * blobDir is .gitlet/blobs/[sha1 value]
      */
     public void removeBlobs(File stagedForRemoveDir, File blobsDir) {
         // remove file from current commit means remove reference of blob,
