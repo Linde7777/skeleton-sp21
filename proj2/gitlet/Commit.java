@@ -155,13 +155,11 @@ public class Commit implements Serializable {
      * blobDir is .gitlet/blobs/[sha1 value]
      */
     public void removeBlobs(File stagedForRemoveDir, File blobsDir) {
+        // remove file from current commit means remove reference of blob,
+        // not delete that blob, because other commit may refer this blob
         for (File fileInStagedDir : Objects.requireNonNull(stagedForRemoveDir.listFiles())) {
             String fileInStagedDirSha1 = sha1((Object) readContents(fileInStagedDir));
-            File blobDir = join(blobsDir, fileInStagedDirSha1);
-            File fileInBlobDir =
-                    getTheOnlyFileInDir(blobDir);
-            fileInBlobDir.delete();
-            blobDir.delete();
+            this.blobSha1List.remove(fileInStagedDirSha1);
         }
     }
 }
