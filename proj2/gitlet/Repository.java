@@ -270,9 +270,7 @@ public class Repository {
         // then we move down to check the next condition.
         if (currentCommit != null) {
             for (String currCommitBlobSha1 : currentCommit.blobSha1List) {
-                File currCommitBlobFile =
-                        getTheOnlyFileInDir(join(GITLET_BLOBS_DIR, currCommitBlobSha1));
-
+                File currCommitBlobFile = getBlobFile(currCommitBlobSha1);
                 if (currCommitBlobFile.getName().equals(filename)) {
                     findFileInCurrentCommit = true;
                     Path src = currCommitBlobFile.toPath();
@@ -374,7 +372,7 @@ public class Repository {
         Commit commit = getCommitBySha1(getHeadCommitSha1());
         for (String blobSha1 : commit.blobSha1List) {
             // recall that blob are stored like: .gitlet/blobs/40 bit sha1 value/hello.txt
-            File blobFile = getTheOnlyFileInDir(join(GITLET_BLOBS_DIR, blobSha1));
+            File blobFile = getBlobFile(blobSha1);
             if (blobFile.getName().equals(filename)) {
                 findThisFileInCurrentCommit = true;
                 Path src = blobFile.toPath();
@@ -402,7 +400,7 @@ public class Repository {
         boolean findThisFileInCurrentCommit = false;
         for (String blobSha1 : commit.blobSha1List) {
             // recall that blob are stored like: .gitlet/blobs/40 bit sha1 value/hello.txt
-            File blobFile = getTheOnlyFileInDir(join(GITLET_BLOBS_DIR, blobSha1));
+            File blobFile = getBlobFile(blobSha1);
             if (blobFile.getName().equals(filename)) {
                 findThisFileInCurrentCommit = true;
                 Path src = blobFile.toPath();
@@ -418,5 +416,9 @@ public class Repository {
 
     public static void checkoutBranchName(String branchName) {
 
+    }
+
+    private static File getBlobFile(String blobSha1) {
+        return getTheOnlyFileInDir(join(GITLET_BLOBS_DIR, blobSha1));
     }
 }
