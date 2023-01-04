@@ -50,7 +50,7 @@ public class Main {
             case "log":
                 Repository.log();
                 break;
-            case "check":
+            case "checkout":
                 if (args[1].equals("--")) {
                     String filename = args[2];
                     Repository.checkoutFilename(filename);
