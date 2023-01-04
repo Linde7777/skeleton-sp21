@@ -414,15 +414,25 @@ public class Repository {
 
     }
 
-    public static void checkoutBranchName(String branchName) throws IOException {
-        File targetBranchFile = join(GITLET_BRANCHES_DIR, branchName);
+    /**
+     * Takes all files in the commit at the head of the given branch,
+     * and puts them in the working directory, overwriting the versions
+     * of the files that are already there if they exist.
+     * Also, at the end of this command, the given branch will now be
+     * considered the current branch (HEAD). Any files that are tracked
+     * in the current branch but are not present in the checked-out branch
+     * are deleted. The staging area is cleared, unless the checked-out
+     * branch is the current branch
+     */
+    public static void checkoutBranchName(String targetBranchName) throws IOException {
+        File targetBranchFile = join(GITLET_BRANCHES_DIR, targetBranchName);
         if (!targetBranchFile.exists()) {
             System.out.println("No such branch exists.");
             System.exit(0);
         }
 
         String theNameOfTheActiveBranch = readContentsAsString(GITLET_ACTIVE_BRANCH_FILE);
-        if (branchName.equals(theNameOfTheActiveBranch)) {
+        if (targetBranchName.equals(theNameOfTheActiveBranch)) {
             System.out.println("No need to checkout the current branch.");
             System.exit(0);
         }
@@ -434,7 +444,6 @@ public class Repository {
             }
         }
 
-        //todo: remind that active branch will change
         for (File file : Objects.requireNonNull(CWD.listFiles())) {
             restrictedDelete(file);
         }
@@ -448,7 +457,7 @@ public class Repository {
             Files.copy(src, dest, StandardCopyOption.REPLACE_EXISTING);
         }
 
-
+        writeContents(GITLET_ACTIVE_BRANCH_FILE, targetBranchName);
     }
 
     private static File getBlobFile(String blobSha1) {
