@@ -415,6 +415,39 @@ public class Repository {
     }
 
     public static void checkoutBranchName(String branchName) {
+        File branchFile = join(GITLET_BRANCHES_DIR, branchName);
+        if (!branchFile.exists()) {
+            System.out.println("No such branch exists.");
+            System.exit(0);
+        }
+
+        String activeBranchName = readContentsAsString(GITLET_ACTIVE_BRANCH_FILE);
+        if (branchName.equals(activeBranchName)) {
+            System.out.println("No need to checkout the current branch.");
+            System.exit(0);
+        }
+
+        boolean thereIsUntrackedFile = false;
+        for (File file : CWD.listFiles()) {
+            if (!join(GITLET_STAGE_FOR_ADD_DIR, file.getName()).exists()) {
+                thereIsUntrackedFile = true;
+            }
+        }
+        if (thereIsUntrackedFile) {
+            System.out.println("There is an untracked file in the way; delete it, or add and commit it first.");
+            System.exit(0);
+        }
+
+        //todo: remind that active branch will change
+        for (File file : CWD.listFiles()) {
+            restrictedDelete(file);
+        }
+        File activeBranchFile = join(GITLET_BRANCHES_DIR, activeBranchName);
+        String activeBranchSha1 = readContentsAsString(activeBranchFile);
+        Commit commit = getCommitBySha1(activeBranchSha1);
+        for (String blobSha1 : commit.blobSha1List) {
+            getBlobFile(blobSha1);
+        }
 
     }
 
