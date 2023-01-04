@@ -65,20 +65,12 @@ public class Commit implements Serializable {
      * Thu Jan 01 00:00:00 CST 1970
      * <p>
      *
-     * @param message    The message of the commit
-     * @param parentSha1 the sha1 value of the parent of this Commit
+     * @param message The message of the commit
      */
-    public Commit(String message, String parentSha1) {
-        if (parentSha1 == null) {
-            this.timeStamp = new Date(0);
-        } else {
-            throw new GitletException(
-                    "You should call constructor only when you initialize a gitlet repo");
-        }
+    public Commit(String message) {
         this.message = message;
         this.parentSha1 = null;
         this.blobSha1List = new LinkedList<>();
-
     }
 
     public void modifyCommit(String message, String parentSha1) {
@@ -103,9 +95,14 @@ public class Commit implements Serializable {
      * when this function is executed, in the .gitlet/blobs/a127db directory,
      * there is a hello.txt(version 2)
      * <p>
+     * In order to implement the commit sha1 autocompletion, we need to make an optimization,
+     * we will take the first two digit from sha1, name it as another directory,
+     * let's say hello.txt's sha1 is 1a3abd2, we will put it in:
+     * .gitlet/blobs/1a/1a3abd2
+     * <p>
      * do distinguish them:
      * blobsDir is .gitlet/blobs/
-     * blobDir is .gitlet/blobs/[sha1 value]
+     * blobDir is .gitlet/blobs/[first 2 bit sha1]/[40 bit sha1]
      * <p>
      *
      * @param stagedForAddDir the files in this directory will be committed
@@ -123,7 +120,7 @@ public class Commit implements Serializable {
             // we need to delete the reference of version 1
             // (we can't delete the file of version 1, because other commit may refer it)
             for (String blobSha1 : blobSha1List) {
-                File blobDir = join(blobsDir, blobSha1);
+                File blobDir = join(blobsDir, blobSha1.substring(0, 2), blobSha1);
                 File blobFile = getTheOnlyFileInDir(blobDir);
                 if (blobFile.getName().equals(stagedFile.getName())) {
                     this.blobSha1List.remove(blobSha1);
@@ -131,7 +128,8 @@ public class Commit implements Serializable {
             }
 
             this.blobSha1List.add(fileSha1);
-            addFileInDir(join(blobsDir, fileSha1), stagedFile);
+            File blobDir = join(blobsDir, fileSha1.substring(0, 2), fileSha1);
+            addFileInDir(blobDir, stagedFile);
         }
     }
 
