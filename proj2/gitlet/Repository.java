@@ -232,11 +232,11 @@ public class Repository {
 
     /**
      * set HEAD and active branch point to the newest commit.
-     * recall GITLET_ACTIVE_BRANCH_FILE store the name of the active branch.
+     * recall that GITLET_ACTIVE_BRANCH_FILE store the name of the active branch.
      */
     private static void setupBranch(String theNewestCommitSha1) {
-        String activeBranchName = readContentsAsString(GITLET_ACTIVE_BRANCH_FILE);
-        File activeBranchFile = join(GITLET_BRANCHES_DIR, activeBranchName);
+        String theNameOfTheActiveBranch = readContentsAsString(GITLET_ACTIVE_BRANCH_FILE);
+        File activeBranchFile = join(GITLET_BRANCHES_DIR, theNameOfTheActiveBranch);
         writeContents(activeBranchFile, theNewestCommitSha1);
         writeContents(HEAD_FILE, theNewestCommitSha1);
     }
@@ -414,15 +414,15 @@ public class Repository {
 
     }
 
-    public static void checkoutBranchName(String branchName) {
+    public static void checkoutBranchName(String branchName) throws IOException {
         File branchFile = join(GITLET_BRANCHES_DIR, branchName);
         if (!branchFile.exists()) {
             System.out.println("No such branch exists.");
             System.exit(0);
         }
 
-        String activeBranchName = readContentsAsString(GITLET_ACTIVE_BRANCH_FILE);
-        if (branchName.equals(activeBranchName)) {
+        String theNameOfTheActiveBranch = readContentsAsString(GITLET_ACTIVE_BRANCH_FILE);
+        if (branchName.equals(theNameOfTheActiveBranch)) {
             System.out.println("No need to checkout the current branch.");
             System.exit(0);
         }
@@ -442,11 +442,14 @@ public class Repository {
         for (File file : CWD.listFiles()) {
             restrictedDelete(file);
         }
-        File activeBranchFile = join(GITLET_BRANCHES_DIR, activeBranchName);
+        File activeBranchFile = join(GITLET_BRANCHES_DIR, theNameOfTheActiveBranch);
         String activeBranchSha1 = readContentsAsString(activeBranchFile);
         Commit commit = getCommitBySha1(activeBranchSha1);
         for (String blobSha1 : commit.blobSha1List) {
-            getBlobFile(blobSha1);
+            File file = getBlobFile(blobSha1);
+            Path src = file.toPath();
+            Path dest = join(CWD, file.getName()).toPath();
+            Files.copy(src, dest, StandardCopyOption.REPLACE_EXISTING);
         }
 
     }
