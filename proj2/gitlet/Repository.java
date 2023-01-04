@@ -309,19 +309,8 @@ public class Repository {
             // why time zone offset is deprecated?
             Date date = currentCommit.getTimeStamp();
 
-            String formattedDateString = String.format("%1$ta %1$tb %1$td %1$tk:%1$tM:%1$tS %1$tY %1$tz", date);
-            /*
-            the code above is equal to the following code:
-            SimpleDateFormat formatter =
-                                 new SimpleDateFormat("E MMM dd hh:mm:ss yyyy Z");
-            String formattedDateString = formatter.format(date);
+            String formattedDateString = formatDate(date);
 
-            Since gitlet document say I should use java.util.formatter,
-            I didn't use SimpleDateFormat.
-
-            notice that in Windows's git bash, it might have problem to display
-            weekday and month, you can try to run this program on Ubuntu
-            */
 
             System.out.println("Date: " + formattedDateString);
             System.out.println(currentCommit.getMessage());
@@ -329,6 +318,25 @@ public class Repository {
             currentCommitSha1 = currentCommit.getParentSha1();
         }
 
+    }
+
+    private static String formatDate(Date date) {
+        // FYI: https://docs.oracle.com/javase/7/docs/api/java/util/Formatter.html
+        return String.format("%1$ta %1$tb %1$td %1$tk:%1$tM:%1$tS %1$tY %1$tz", date);
+        /*
+            you can also use the following code to get the same output:
+            SimpleDateFormat formatter =
+                                 new SimpleDateFormat("E MMM dd hh:mm:ss yyyy Z");
+            String formattedDateString = formatter.format(date);
+
+            Since gitlet document say I should use java.util.formatter,
+            I didn't use SimpleDateFormat.
+            if your Operating System's language is not English,
+            it might have problem to display weekday and month,
+            because weekday and month in String will be other language(e.g. Chinese),
+            and the terminal may have problem to display that.
+            you can try to run this program on Ubuntu
+            */
     }
 
     public static void branch() {
