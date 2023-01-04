@@ -143,11 +143,6 @@ public class Repository {
         Files.copy(src, dest, StandardCopyOption.REPLACE_EXISTING);
     }
 
-    /**
-     * the sha1 value of current commit is store at HEAD_FILE
-     *
-     * @return
-     */
     private static Commit getHeadCommit() {
         String commitSha1 = getHeadCommitSha1();
         // if there is no commit.
@@ -211,11 +206,10 @@ public class Repository {
 
         String commitSha1 = serializeCommit(commit);
 
-        for (File file : Objects.requireNonNull(GITLET_STAGE_FOR_ADD_DIR.listFiles())) {
-            file.delete();
-        }
-
         setupBranch(commitSha1);
+
+        deleteAllFilesInDir(GITLET_STAGE_FOR_ADD_DIR);
+        deleteAllFilesInDir(GITLET_STAGE_FOR_REMOVE);
     }
 
     /**
