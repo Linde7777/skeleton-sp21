@@ -7,8 +7,7 @@ import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.*;
 
-import static gitlet.StudentUtils.getTheNewestFileInDir;
-import static gitlet.StudentUtils.getTheOnlyFileInDir;
+import static gitlet.StudentUtils.*;
 import static gitlet.Utils.*;
 
 // TODO: any imports you need here
@@ -204,12 +203,29 @@ public class Repository {
             assert commit != null;
             commit.modifyCommit(message, parentSha1);
             commit.addBlobs(GITLET_STAGE_FOR_ADD_DIR, GITLET_BLOBS_DIR);
-            commit.removeBlobs(GITLET_STAGE_FOR_REMOVE, GITLET_BLOBS_DIR);
+            commit.removeBlobs(GITLET_STAGE_FOR_REMOVE);
         } else {
             commit = new Commit(message, parentSha1);
             commit.addBlobs(GITLET_STAGE_FOR_ADD_DIR, GITLET_BLOBS_DIR);
         }
 
+        String commitSha1 = serializeCommit(commit);
+
+        for (File file : Objects.requireNonNull(GITLET_STAGE_FOR_ADD_DIR.listFiles())) {
+            file.delete();
+        }
+
+        setupBranch(commitSha1);
+    }
+
+    /**
+     * serialize a Commit class in the GITLET_COMMITS_DIR
+     * and return its sha1 value
+     *
+     * @param commit the commit we want to serialize
+     * @return the sha1 of the commit
+     */
+    private static String serializeCommit(Commit commit) {
         File commitSerializedFile = join(GITLET_COMMITS_DIR, "tempCommitName");
         writeObject(commitSerializedFile, commit);
         String commitSha1 = sha1((Object) readContents(commitSerializedFile));
@@ -219,11 +235,7 @@ public class Repository {
             throw new GitletException("rename serialized Commit file failed");
         }
 
-        for (File file : Objects.requireNonNull(GITLET_STAGE_FOR_ADD_DIR.listFiles())) {
-            file.delete();
-        }
-
-        setupBranch(commitSha1);
+        return commitSha1;
     }
 
     /**
