@@ -70,8 +70,7 @@ public class Commit implements Serializable {
      * @param stagedForAddDir will be used by addBlobs(), see its comment
      * @param blobsDir        will be used by addBlobs(), see its comment
      */
-    public Commit(String message, String parentSha1,
-                  File stagedForAddDir, File blobsDir, File stageForRemove) throws IOException {
+    public Commit(String message, String parentSha1) {
         if (parentSha1 == null) {
             this.timeStamp = new Date(0);
         } else {
@@ -81,38 +80,13 @@ public class Commit implements Serializable {
         this.message = message;
         this.parentSha1 = null;
         this.blobSha1List = new LinkedList<>();
-        addBlobs(stagedForAddDir, blobsDir);
 
     }
 
-    public void modifyCommit(String message, String parentSha1, File stagedForAddDir, File stageForRemoveDir, File blobsDir) throws IOException {
+    public void modifyCommit(String message, String parentSha1) {
         this.message = message;
         this.parentSha1 = parentSha1;
         this.timeStamp = new Date();
-        addBlobs(stagedForAddDir, blobsDir);
-        removeBlobs(stageForRemoveDir, blobsDir);
-    }
-
-
-    /**
-     * if there are files in stageForRemoveDir,
-     * remove them from the current Commit.
-     * recall that Repository.remove() have make sure that the
-     * files in stagedForRemoveDir exist in the current commit.
-     * <p>
-     * do distinguish them:
-     * blobsDir is .gitlet/blobs/
-     * blobDir is .gitlet/blobs/[sha1 value]
-     */
-    private void removeBlobs(File stagedForRemoveDir, File blobsDir) {
-        for (File fileInStagedDir : Objects.requireNonNull(stagedForRemoveDir.listFiles())) {
-            String fileInStagedDirSha1 = sha1((Object) readContents(fileInStagedDir));
-            File blobDir = join(blobsDir, fileInStagedDirSha1);
-            File fileInBlobDir =
-                    getTheOnlyFileInDir(blobDir);
-            fileInBlobDir.delete();
-            blobDir.delete();
-        }
     }
 
     /**
@@ -170,5 +144,26 @@ public class Commit implements Serializable {
         Path src = file.toPath();
         Path dest = join(dir, file.getName()).toPath();
         Files.copy(src, dest, StandardCopyOption.REPLACE_EXISTING);
+    }
+
+    /**
+     * if there are files in stageForRemoveDir,
+     * remove them from the current Commit.
+     * recall that Repository.remove() have make sure that the
+     * files in stagedForRemoveDir exist in the current commit.
+     * <p>
+     * do distinguish them:
+     * blobsDir is .gitlet/blobs/
+     * blobDir is .gitlet/blobs/[sha1 value]
+     */
+    public void removeBlobs(File stagedForRemoveDir, File blobsDir) {
+        for (File fileInStagedDir : Objects.requireNonNull(stagedForRemoveDir.listFiles())) {
+            String fileInStagedDirSha1 = sha1((Object) readContents(fileInStagedDir));
+            File blobDir = join(blobsDir, fileInStagedDirSha1);
+            File fileInBlobDir =
+                    getTheOnlyFileInDir(blobDir);
+            fileInBlobDir.delete();
+            blobDir.delete();
+        }
     }
 }

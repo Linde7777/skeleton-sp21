@@ -191,11 +191,13 @@ public class Repository {
         Commit commit;
         if (parentSha1 != null) {
             commit = getHeadCommit();
-            commit.modifyCommit(message, parentSha1,
-                    GITLET_STAGE_FOR_ADD_DIR, GITLET_STAGE_FOR_REMOVE, GITLET_BLOBS_DIR);
+            assert commit != null;
+            commit.modifyCommit(message, parentSha1);
+            commit.addBlobs(GITLET_STAGE_FOR_ADD_DIR, GITLET_BLOBS_DIR);
+            commit.removeBlobs(GITLET_STAGE_FOR_REMOVE, GITLET_BLOBS_DIR);
         } else {
-            commit = new Commit(message, parentSha1,
-                    GITLET_STAGE_FOR_ADD_DIR, GITLET_BLOBS_DIR, GITLET_STAGE_FOR_REMOVE);
+            commit = new Commit(message, parentSha1);
+            commit.addBlobs(GITLET_STAGE_FOR_ADD_DIR, GITLET_BLOBS_DIR);
         }
 
         File commitSerializedFile = join(GITLET_COMMITS_DIR, "tempCommitName");
