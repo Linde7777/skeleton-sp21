@@ -41,7 +41,7 @@ public class Main {
                 break;
             case "commit":
                 String message = args[1];
-                Repository.commit(message);
+                Repository.setUpCommit(message);
                 break;
             case "rm":
                 String filenameForRemove = args[1];
