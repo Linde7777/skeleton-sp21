@@ -5,9 +5,9 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
-import java.text.SimpleDateFormat;
 import java.util.*;
 
+import static gitlet.StudentUtils.getTheNewestFileInDir;
 import static gitlet.StudentUtils.getTheOnlyFileInDir;
 import static gitlet.Utils.*;
 
@@ -65,14 +65,20 @@ public class Repository {
     public static final File GITLET_BRANCHES_DIR = join(GITLET_DIR, "branches");
 
     /**
-     * where store the sha1 value of master as file
+     * The .gitlet/branches/activeBranch file, where store the name of the active branch
+     */
+    public static final File GITLET_ACTIVE_BRANCH_FILE = join(GITLET_BRANCHES_DIR, "activeBranch");
+
+    /**
+     * The .gitlet/branches/master file, where store the sha1 value of master as file
      */
     public static File master_FILE = join(GITLET_BRANCHES_DIR, "master");
 
     /**
-     * where store the sha1 value of HEAD as a file
+     * The .gitlet/branches/HEAD file, where store the sha1 value of HEAD as a file
      */
     public static final File HEAD_FILE = join(GITLET_BRANCHES_DIR, "HEAD");
+
 
     private static void checkInitialize() {
         if (!GITLET_DIR.exists()) {
@@ -93,8 +99,11 @@ public class Repository {
         GITLET_BLOBS_DIR.mkdir();
         GITLET_COMMITS_DIR.mkdir();
         GITLET_BRANCHES_DIR.mkdir();
+        GITLET_ACTIVE_BRANCH_FILE.mkdir();
         master_FILE.createNewFile();
         HEAD_FILE.createNewFile();
+
+        writeContents(GITLET_ACTIVE_BRANCH_FILE, "master");
 
         // since add and commit must contain file,
         // here we need to make a temp file
@@ -154,7 +163,7 @@ public class Repository {
     }
 
     /**
-     * notice that it is public method
+     * notice that this is the public method
      *
      * @param message
      * @throws IOException
@@ -169,9 +178,10 @@ public class Repository {
      * if it is the first commit, we will call commit constructor,
      * otherwise we will copy a commit then modify it.
      * Then delete files in stageForAdd directory.
+     * After that, we will serialize it and put it in commitsDir,
+     * and set HEAD point to active branch.
      * <p>
-     * after that, we will serialize it and put it in commitsDir
-     * e.g.
+     * For example:
      * We initialize a Commit, whose sha1 value is a154ccd,
      * then we will serialize this commit, this serialized file
      * will be named after a154ccd, then we put it in .gitlet/commits
@@ -208,33 +218,25 @@ public class Repository {
         if (!flag) {
             throw new GitletException("rename serialized Commit file failed");
         }
+
         for (File file : Objects.requireNonNull(GITLET_STAGE_FOR_ADD_DIR.listFiles())) {
             file.delete();
         }
+
         setupBranch();
     }
 
     private static void setupBranch() throws IOException {
-        // the newest file in GITLET_COMMITS_DIR is the commit we just created
-        // where the HEAD should point to
+        // the newest file in GITLET_COMMITS_DIR is the commit we just created,
+        // where the HEAD and active branch should point to
+        File theNewestCommitFile = getTheNewestFileInDir(GITLET_COMMITS_DIR);
 
-        // copy from https://www.baeldung.com/java-last-modified-file
-        Path dirPath = GITLET_COMMITS_DIR.toPath();
-        Optional<Path> opPath = Files.list(dirPath).filter(p -> !Files.isDirectory(p))
-                .sorted((p1, p2) -> Long.valueOf(p2.toFile().lastModified())
-                        .compareTo(p1.toFile().lastModified()))
-                .findFirst();
-        File theNewestCommitFile;
-        if (opPath.isPresent()) {
-            theNewestCommitFile = opPath.get().toFile();
-        } else {
-            throw new GitletException("find the newest commit failed");
-        }
-        // todo: may need to be modify when dealing with checkout
-        String HEADSha1 = theNewestCommitFile.getName();
-        String masterSha1 = HEADSha1;
-        writeContents(HEAD_FILE, HEADSha1);
-        writeContents(master_FILE, masterSha1);
+        // recall that in .gitlet/commits, the commits are named by its sha1
+        String theNewestCommitSha1 = theNewestCommitFile.getName();
+        String activeBranchName = readContentsAsString(GITLET_ACTIVE_BRANCH_FILE);
+        File activeBranchFile = join(GITLET_BRANCHES_DIR, activeBranchName);
+        writeContents(activeBranchFile, theNewestCommitSha1);
+        writeContents(HEAD_FILE, theNewestCommitSha1);
     }
 
     /**
@@ -318,6 +320,10 @@ public class Repository {
             System.out.println();
             currentCommitSha1 = currentCommit.getParentSha1();
         }
+
+    }
+
+    public static void branch() {
 
     }
 
