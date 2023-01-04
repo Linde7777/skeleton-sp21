@@ -134,7 +134,11 @@ public class Repository {
     }
 
     private static String getHeadCommitSha1() {
-        return readContentsAsString(HEAD_FILE);
+        String sha1 = readContentsAsString(HEAD_FILE);
+        if (sha1.equals("")) {
+            throw new GitletException("HEAD_FILE is empty");
+        }
+        return sha1;
     }
 
     private static Commit getCommitBySha1(String commitSha1) {
@@ -307,7 +311,6 @@ public class Repository {
 
     }
 
-
     private static String formatDate(Date date) {
         // FYI: https://docs.oracle.com/javase/7/docs/api/java/util/Formatter.html
         return String.format("%1$ta %1$tb %1$td %1$tk:%1$tM:%1$tS %1$tY %1$tz", date);
@@ -362,15 +365,21 @@ public class Repository {
      * The new version of the file is not staged.
      */
     public static void checkoutFilename(String filename) throws IOException {
+        boolean findThisFileInCurrentCommit = false;
         Commit commit = getCommitBySha1(getHeadCommitSha1());
         for (String blobSha1 : commit.blobSha1List) {
             // recall that blob are stored like: .gitlet/blobs/40 bit sha1 value/hello.txt
             File blobFile = getTheOnlyFileInDir(join(GITLET_BLOBS_DIR, blobSha1));
             if (blobFile.getName().equals(filename)) {
+                findThisFileInCurrentCommit = true;
                 Path src = blobFile.toPath();
                 Path dest = join(CWD, blobFile.getName()).toPath();
                 Files.copy(src, dest, StandardCopyOption.REPLACE_EXISTING);
             }
+        }
+
+        if (!findThisFileInCurrentCommit) {
+            System.out.println("File does not exist in that commit.");
         }
     }
 
@@ -379,7 +388,26 @@ public class Repository {
      * and puts it in the working directory, overwriting the version of the file
      * that’s already there if there is one. The new version of the file is not staged.
      */
-    public static void checkoutCommitAndFilename(String commitId, String filename) {
+    public static void checkoutCommitAndFilename(String commitId, String filename) throws IOException {
+        Commit commit = getCommitBySha1(commitId);
+        if (commit == null) {
+            System.out.println("No commit with that id exists.");
+            System.exit(0);
+        }
+        boolean findThisFileInCurrentCommit = false;
+        for (String blobSha1 : commit.blobSha1List) {
+            // recall that blob are stored like: .gitlet/blobs/40 bit sha1 value/hello.txt
+            File blobFile = getTheOnlyFileInDir(join(GITLET_BLOBS_DIR, blobSha1));
+            if (blobFile.getName().equals(filename)) {
+                findThisFileInCurrentCommit = true;
+                Path src = blobFile.toPath();
+                Path dest = join(CWD, blobFile.getName()).toPath();
+                Files.copy(src, dest, StandardCopyOption.REPLACE_EXISTING);
+            }
+        }
+        if (!findThisFileInCurrentCommit) {
+            System.out.println("File does not exist in that commit.");
+        }
 
     }
 
