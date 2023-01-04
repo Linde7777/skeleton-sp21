@@ -4,18 +4,20 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Objects;
 import java.util.Optional;
 
 public class StudentUtils {
 
+    public static void deleteAllFilesInDir(File dir) {
+        for (File file : Objects.requireNonNull(dir.listFiles())) {
+            file.delete();
+        }
+    }
+
     /**
-     * @deprecated
-     *
-     * in the previous version, this function is used to get the newest file
-     * which is in the .gitlet/commits
-     * @param dir
-     * @return
-     * @throws IOException
+     * @deprecated in the previous version, this function
+     * is used to get the newest file in the .gitlet/commits
      */
     public static File getTheNewestFileInDir(File dir) throws IOException {
         // copied and adapted from https://www.baeldung.com/java-last-modified-file
