@@ -98,7 +98,7 @@ public class Repository {
         GITLET_BLOBS_DIR.mkdir();
         GITLET_COMMITS_DIR.mkdir();
         GITLET_BRANCHES_DIR.mkdir();
-        GITLET_ACTIVE_BRANCH_FILE.mkdir();
+        GITLET_ACTIVE_BRANCH_FILE.createNewFile();
         master_FILE.createNewFile();
         HEAD_FILE.createNewFile();
 
