@@ -231,7 +231,8 @@ public class Repository {
     }
 
     /**
-     * set HEAD and active branch point to the newest commit
+     * set HEAD and active branch point to the newest commit.
+     * recall GITLET_ACTIVE_BRANCH_FILE store the name of the active branch.
      */
     private static void setupBranch(String theNewestCommitSha1) {
         String activeBranchName = readContentsAsString(GITLET_ACTIVE_BRANCH_FILE);
