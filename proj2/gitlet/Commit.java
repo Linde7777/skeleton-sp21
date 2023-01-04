@@ -66,15 +66,9 @@ public class Commit implements Serializable {
      * <p>
      *
      * @param message    The message of the commit
-     * @param parentSha1 the sha1 value of the parent of this Commit
      */
-    public Commit(String message, String parentSha1) {
-        if (parentSha1 == null) {
-            this.timeStamp = new Date(0);
-        } else {
-            throw new GitletException(
-                    "You should call constructor only when you initialize a gitlet repo");
-        }
+    public Commit(String message) {
+        this.timeStamp = new Date(0);
         this.message = message;
         this.parentSha1 = null;
         this.blobSha1List = new LinkedList<>();

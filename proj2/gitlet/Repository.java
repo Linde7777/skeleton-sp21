@@ -144,16 +144,23 @@ public class Repository {
     }
 
     private static Commit getHeadCommit() {
-        String commitSha1 = getHeadCommitSha1();
-        // if there is no commit.
-        if (commitSha1.equals("")) {
-            return null;
-        }
-        return readObject(join(GITLET_COMMITS_DIR, commitSha1), Commit.class);
+        String headSha1 = getHeadCommitSha1();
+        return getCommitBySha1(headSha1);
     }
 
     private static String getHeadCommitSha1() {
         return readContentsAsString(HEAD_FILE);
+    }
+
+    private static Commit getCommitBySha1(String commitSha1) {
+        if (commitSha1.length() < 40) {
+            return null;
+        }
+        File file = join(GITLET_COMMITS_DIR, commitSha1.substring(0, 2), commitSha1);
+        if (!file.exists()) {
+            return null;
+        }
+        return readObject(file, Commit.class);
     }
 
     /**
@@ -200,7 +207,7 @@ public class Repository {
             commit.addBlobs(GITLET_STAGE_FOR_ADD_DIR, GITLET_BLOBS_DIR);
             commit.removeBlobs(GITLET_STAGE_FOR_REMOVE);
         } else {
-            commit = new Commit(message, parentSha1);
+            commit = new Commit(message);
             commit.addBlobs(GITLET_STAGE_FOR_ADD_DIR, GITLET_BLOBS_DIR);
         }
 
@@ -213,21 +220,28 @@ public class Repository {
     }
 
     /**
-     * serialize a Commit class in the GITLET_COMMITS_DIR
-     * and return its sha1 value
+     * serialize a Commit class in the GITLET_COMMITS_DIR/[first 2 sha1 digit]/[40 bit sha1 digit]
+     * and return its sha1 value.
+     * <p>
+     * for example:
+     * We serialize a Commit class, and get its sha1: a1fb321c,
+     * this file's path will be .gitlet/commits/a1/a1fb321c
      *
      * @param commit the commit we want to serialize
      * @return the sha1 of the commit
      */
-    private static String serializeCommit(Commit commit) {
-        File commitSerializedFile = join(GITLET_COMMITS_DIR, "tempCommitName");
-        writeObject(commitSerializedFile, commit);
-        String commitSha1 = sha1((Object) readContents(commitSerializedFile));
-        File renameCommitSerializedFile = join(GITLET_COMMITS_DIR, commitSha1);
-        boolean flag = commitSerializedFile.renameTo(renameCommitSerializedFile);
-        if (!flag) {
-            throw new GitletException("rename serialized Commit file failed");
+    private static String serializeCommit(Commit commit) throws IOException {
+        File commitFile = join(GITLET_COMMITS_DIR, "tempCommitName");
+        writeObject(commitFile, commit);
+        String commitSha1 = sha1((Object) readContents(commitFile));
+
+        File commitDir = join(GITLET_COMMITS_DIR, commitSha1.substring(0, 2));
+        if (!commitDir.exists()) {
+            commitDir.mkdir();
         }
+        Path src = commitFile.toPath();
+        Path dest = join(commitDir, commitSha1).toPath();
+        Files.copy(src, dest, StandardCopyOption.REPLACE_EXISTING);
 
         return commitSha1;
     }
@@ -302,8 +316,7 @@ public class Repository {
 
         String currentCommitSha1 = getHeadCommitSha1();
         while (currentCommitSha1 != null) {
-            File currentCommitFile = join(GITLET_COMMITS_DIR, currentCommitSha1);
-            Commit currentCommit = readObject(currentCommitFile, Commit.class);
+            Commit currentCommit = getCommitBySha1(currentCommitSha1);
             Date date = currentCommit.getTimeStamp();
             String formattedDateString = formatDate(date);
 
@@ -317,6 +330,7 @@ public class Repository {
         }
 
     }
+
 
     private static String formatDate(Date date) {
         // FYI: https://docs.oracle.com/javase/7/docs/api/java/util/Formatter.html
@@ -387,11 +401,11 @@ public class Repository {
      * and puts it in the working directory, overwriting the version of the file
      * that’s already there if there is one. The new version of the file is not staged.
      */
-    public static void checkoutCommitAndFilename(String commitId, String filename){
+    public static void checkoutCommitAndFilename(String commitId, String filename) {
 
     }
 
-    public static void checkoutBranchName(String branchName){
+    public static void checkoutBranchName(String branchName) {
 
     }
 }
