@@ -135,11 +135,25 @@ public class Commit implements Serializable {
      * @param blobsDir        where store the blobs
      */
     public void addBlobs(File stagedForAddDir, File blobsDir) throws IOException {
-        for (File file : Objects.requireNonNull(stagedForAddDir.listFiles())) {
-            String fileSha1 = sha1((Object) readContents(file));
+        for (File stagedFile : Objects.requireNonNull(stagedForAddDir.listFiles())) {
+            String fileSha1 = sha1((Object) readContents(stagedFile));
+
             if (!this.blobSha1List.contains(fileSha1)) {
+
+                // if in the previous commit, there is hello.txt (version 1),
+                // and in the current commit, we are going to add hello.txt (version 2),
+                // we need to delete the reference of version 1
+                // (we can't delete the file of version 1, because other commit may refer it)
+                for (String blobSha1 : blobSha1List) {
+                    File blobDir = join(blobsDir, blobSha1);
+                    File blobFile = getTheOnlyFileInDir(blobDir);
+                    if (blobFile.getName().equals(stagedFile.getName())) {
+                        this.blobSha1List.remove(blobSha1);
+                    }
+                }
+
                 this.blobSha1List.add(fileSha1);
-                addFileInDir(join(blobsDir, fileSha1), file);
+                addFileInDir(join(blobsDir, fileSha1), stagedFile);
             }
         }
     }
