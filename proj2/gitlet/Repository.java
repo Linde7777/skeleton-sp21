@@ -78,6 +78,10 @@ public class Repository {
         }
     }
 
+    /**
+     * notice that we won't call add() then call commit(),
+     * we will call setUpCommit() instead.
+     */
     public static void init() throws IOException {
         if (!GITLET_DIR.exists()) {
             GITLET_DIR.mkdir();
