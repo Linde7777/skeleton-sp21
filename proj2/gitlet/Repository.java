@@ -268,6 +268,7 @@ public class Repository {
         Commit currentCommit = getHeadCommit();
 
         // if currentCommit is null, it is ok, we don't need to do anything
+        // then we move down to check the next condition.
         if (currentCommit != null) {
             for (String currCommitBlobSha1 : currentCommit.blobSha1List) {
                 File currCommitBlobFile =
