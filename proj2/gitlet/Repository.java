@@ -147,7 +147,9 @@ public class Repository {
         String commitSha1 = getHeadCommitSha1();
         // if there is no commit.
         if (commitSha1.equals("")) {
-            return null;
+            // this shouldn't be happened, since init()
+            // will create an initial commit, just in case.
+            throw new GitletException("HEAD commit is null");
         }
         return readObject(join(GITLET_COMMITS_DIR, commitSha1), Commit.class);
     }
@@ -158,9 +160,6 @@ public class Repository {
 
     /**
      * notice that this is the public method
-     *
-     * @param message
-     * @throws IOException
      */
     public static void commit(String message) throws IOException {
         checkInitialize();
@@ -176,9 +175,10 @@ public class Repository {
      * and set HEAD point to active branch.
      * <p>
      * For example:
-     * We initialize a Commit, whose sha1 value is a154ccd,
-     * then we will serialize this commit, this serialized file
-     * will be named after a154ccd, then we put it in .gitlet/commits
+     * We initialize a Commit, then we will serialize this commit
+     * and get its sha1: a154ccd,
+     * this serialized file will be named by a154ccd,
+     * so its path is: .gitlet/commits/a154ccd
      *
      * @param message    the message of this commit
      * @param parentSha1 the sha1 value of the parent commit
@@ -195,18 +195,19 @@ public class Repository {
         Commit commit;
         if (parentSha1 != null) {
             commit = getHeadCommit();
-            assert commit != null;
             commit.modifyCommit(message, parentSha1);
             commit.addBlobs(GITLET_STAGE_FOR_ADD_DIR, GITLET_BLOBS_DIR);
             commit.removeBlobs(GITLET_STAGE_FOR_REMOVE);
         } else {
-            commit = new Commit(message, parentSha1);
+            // the first commit will just contain a .gitletTempFile,
+            // it won't remove anything, so it doesn't need to call removeBlobs()
+            commit = new Commit(message);
             commit.addBlobs(GITLET_STAGE_FOR_ADD_DIR, GITLET_BLOBS_DIR);
         }
 
         String commitSha1 = serializeCommit(commit);
 
-        setupBranch(commitSha1);
+        setupBranches(commitSha1);
 
         deleteAllFilesInDir(GITLET_STAGE_FOR_ADD_DIR);
         deleteAllFilesInDir(GITLET_STAGE_FOR_REMOVE);
@@ -233,12 +234,14 @@ public class Repository {
     }
 
     /**
-     * set HEAD and active branch point to the newest commit
+     * set HEAD and active branch point to the newest commit.
+     * recall GITLET_ACTIVE_BRANCH_FILE store the name of the active branch
+     * like master or something.
      */
-    private static void setupBranch(String theNewestCommitSha1) throws IOException {
+    private static void setupBranches(String theNewestCommitSha1) throws IOException {
         String activeBranchName = readContentsAsString(GITLET_ACTIVE_BRANCH_FILE);
-        File activeBranchFile = join(GITLET_BRANCHES_DIR, activeBranchName);
-        writeContents(activeBranchFile, theNewestCommitSha1);
+        File theBranchFile = join(GITLET_BRANCHES_DIR, activeBranchName);
+        writeContents(theBranchFile, theNewestCommitSha1);
         writeContents(HEAD_FILE, theNewestCommitSha1);
     }
 
@@ -253,8 +256,8 @@ public class Repository {
     public static void remove(String filename) throws IOException {
         boolean findFileInStageForAddDir = false;
         File[] filesInStageForAddDir = GITLET_STAGE_FOR_ADD_DIR.listFiles();
-        // if filesInStageForAddDir is null, it is ok, we don't need to do anything,
-        // and then we move down to check if we need to delete file from current commit.
+        // if filesInStageForAddDir is empty, it is ok, we don't need to do anything,
+        // and then we move down to check if this file is tracked in the current commit.
         if (filesInStageForAddDir != null) {
             for (File file : filesInStageForAddDir) {
                 if (filename.equals(file.getName())) {
@@ -266,13 +269,13 @@ public class Repository {
 
         boolean findFileInCurrentCommit = false;
         Commit currentCommit = getHeadCommit();
-
         // if currentCommit is null, it is ok, we don't need to do anything
         // then we move down to check the next condition.
         if (currentCommit != null) {
             for (String currCommitBlobSha1 : currentCommit.blobSha1List) {
                 File currCommitBlobFile =
-                        getTheOnlyFileInDir(join(GITLET_BLOBS_DIR, currCommitBlobSha1));
+                        getTheOnlyFileInDir(join(GITLET_BLOBS_DIR,
+                                currCommitBlobSha1.substring(0, 2), currCommitBlobSha1));
 
                 if (currCommitBlobFile.getName().equals(filename)) {
                     findFileInCurrentCommit = true;
@@ -374,8 +377,10 @@ public class Repository {
     public static void checkoutFilename(String filename) throws IOException {
         Commit commit = getHeadCommit();
         for (String blobSha1 : commit.blobSha1List) {
-            // recall that blob are stored like: .gitlet/blobs/40 bit sha1 value/hello.txt
-            File blobFile = getTheOnlyFileInDir(join(GITLET_BLOBS_DIR, blobSha1));
+            // recall that blob are stored like:
+            // .gitlet/blobs/[first 2 bit sha1]/[40 bit sha1]/hello.txt
+            File blobDir = join(GITLET_BLOBS_DIR, blobSha1.substring(0, 2), blobSha1);
+            File blobFile = getTheOnlyFileInDir(blobDir);
             Path src = blobFile.toPath();
             Path dest = join(CWD, blobFile.getName()).toPath();
             Files.copy(src, dest, StandardCopyOption.REPLACE_EXISTING);
@@ -387,11 +392,11 @@ public class Repository {
      * and puts it in the working directory, overwriting the version of the file
      * that’s already there if there is one. The new version of the file is not staged.
      */
-    public static void checkoutCommitAndFilename(String commitId, String filename){
+    public static void checkoutCommitAndFilename(String commitId, String filename) {
 
     }
 
-    public static void checkoutBranchName(String branchName){
+    public static void checkoutBranchName(String branchName) {
 
     }
 }
