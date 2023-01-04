@@ -110,7 +110,6 @@ public class Repository {
      * to one of the files in current commit, we won't add it.
      *
      * @param filename the file we want to add
-     * @throws IOException
      */
     public static void add(String filename) throws IOException {
         checkInitialize();
@@ -151,13 +150,10 @@ public class Repository {
 
     /**
      * notice that this is the public method
-     *
-     * @param message
-     * @throws IOException
      */
     public static void setUpCommit(String message) throws IOException {
         checkInitialize();
-        String HEADSha1 = readContentsAsString(HEAD_FILE);
+        String HEADSha1 = getHeadCommitSha1();
         setUpCommit(message, HEADSha1);
     }
 
@@ -178,8 +174,8 @@ public class Repository {
      */
     private static void setUpCommit(String message, String parentSha1) throws IOException {
         checkInitialize();
-        if (GITLET_STAGE_FOR_ADD_DIR.list().length == 0
-                && GITLET_STAGE_FOR_REMOVE.list().length == 0) {
+        if (Objects.requireNonNull(GITLET_STAGE_FOR_ADD_DIR.list()).length == 0
+                && Objects.requireNonNull(GITLET_STAGE_FOR_REMOVE.list()).length == 0) {
             System.out.println("No changes added to the commit.");
             System.exit(0);
         }
@@ -229,7 +225,7 @@ public class Repository {
     /**
      * set HEAD and active branch point to the newest commit
      */
-    private static void setupBranch(String theNewestCommitSha1) throws IOException {
+    private static void setupBranch(String theNewestCommitSha1) {
         String activeBranchName = readContentsAsString(GITLET_ACTIVE_BRANCH_FILE);
         File activeBranchFile = join(GITLET_BRANCHES_DIR, activeBranchName);
         writeContents(activeBranchFile, theNewestCommitSha1);
@@ -370,7 +366,7 @@ public class Repository {
         for (String blobSha1 : commit.blobSha1List) {
             // recall that blob are stored like: .gitlet/blobs/40 bit sha1 value/hello.txt
             File blobFile = getTheOnlyFileInDir(join(GITLET_BLOBS_DIR, blobSha1));
-            if(blobFile.getName().equals(filename)){
+            if (blobFile.getName().equals(filename)) {
                 Path src = blobFile.toPath();
                 Path dest = join(CWD, blobFile.getName()).toPath();
                 Files.copy(src, dest, StandardCopyOption.REPLACE_EXISTING);
