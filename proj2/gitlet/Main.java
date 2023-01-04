@@ -50,6 +50,19 @@ public class Main {
             case "log":
                 Repository.log();
                 break;
+            case "check":
+                if (args[1].equals("--")) {
+                    String filename = args[2];
+                    Repository.checkoutFilename(filename);
+                } else if (args[2].equals("--")) {
+                    String commitId = args[1];
+                    String filename = args[3];
+                    Repository.checkoutCommitAndFilename(commitId, filename);
+                } else {
+                    String branchName = args[1];
+                    Repository.checkoutBranchName(branchName);
+                }
+                break;
             default:
                 System.out.println("No command with that name exists.");
                 break;
