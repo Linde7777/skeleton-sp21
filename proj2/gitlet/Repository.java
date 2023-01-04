@@ -365,4 +365,21 @@ public class Repository {
         }
     }
 
+    /**
+     * Takes the version of the file as it exists in the head commit and
+     * puts it in the working directory, overwriting the version of the file
+     * that’s already there if there is one.
+     * The new version of the file is not staged.
+     */
+    public static void checkout(String filename) throws IOException {
+        Commit commit = getHeadCommit();
+        for (String blobSha1 : commit.blobSha1List) {
+            // recall that blob are stored like: .gitlet/blobs/40 bit sha1 value/hello.txt
+            File blobFile = getTheOnlyFileInDir(join(GITLET_BLOBS_DIR, blobSha1));
+            Path src = blobFile.toPath();
+            Path dest = join(CWD, blobFile.getName()).toPath();
+            Files.copy(src, dest, StandardCopyOption.REPLACE_EXISTING);
+        }
+
+    }
 }
