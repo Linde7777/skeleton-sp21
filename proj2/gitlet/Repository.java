@@ -415,8 +415,8 @@ public class Repository {
     }
 
     public static void checkoutBranchName(String branchName) throws IOException {
-        File branchFile = join(GITLET_BRANCHES_DIR, branchName);
-        if (!branchFile.exists()) {
+        File targetBranchFile = join(GITLET_BRANCHES_DIR, branchName);
+        if (!targetBranchFile.exists()) {
             System.out.println("No such branch exists.");
             System.exit(0);
         }
@@ -427,23 +427,19 @@ public class Repository {
             System.exit(0);
         }
 
-        boolean thereIsUntrackedFile = false;
         for (File file : CWD.listFiles()) {
             if (!join(GITLET_STAGE_FOR_ADD_DIR, file.getName()).exists()) {
-                thereIsUntrackedFile = true;
+                System.out.println("There is an untracked file in the way; delete it, or add and commit it first.");
+                System.exit(0);
             }
-        }
-        if (thereIsUntrackedFile) {
-            System.out.println("There is an untracked file in the way; delete it, or add and commit it first.");
-            System.exit(0);
         }
 
         //todo: remind that active branch will change
-        for (File file : CWD.listFiles()) {
+        for (File file : Objects.requireNonNull(CWD.listFiles())) {
             restrictedDelete(file);
         }
-        File activeBranchFile = join(GITLET_BRANCHES_DIR, theNameOfTheActiveBranch);
-        String activeBranchSha1 = readContentsAsString(activeBranchFile);
+
+        String activeBranchSha1 = readContentsAsString(targetBranchFile);
         Commit commit = getCommitBySha1(activeBranchSha1);
         for (String blobSha1 : commit.blobSha1List) {
             File file = getBlobFile(blobSha1);
@@ -451,6 +447,7 @@ public class Repository {
             Path dest = join(CWD, file.getName()).toPath();
             Files.copy(src, dest, StandardCopyOption.REPLACE_EXISTING);
         }
+
 
     }
 
