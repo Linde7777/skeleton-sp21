@@ -350,4 +350,19 @@ public class Repository {
         writeContents(branchFile, currentCommitSha1);
     }
 
+    public static void removeBranch(String branchName) {
+        if (readContentsAsString(GITLET_ACTIVE_BRANCH_FILE).equals(branchName)) {
+            System.out.println("Cannot remove the current branch.");
+            System.exit(0);
+        }
+
+        File branchFile = join(GITLET_BRANCHES_DIR, branchName);
+        if (branchFile.exists()) {
+            branchFile.delete();
+        } else {
+            System.out.println("A branch with that name does not exist.");
+            System.exit(0);
+        }
+    }
+
 }
