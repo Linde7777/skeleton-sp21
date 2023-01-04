@@ -149,14 +149,14 @@ public class Commit implements Serializable {
 
     /**
      * if there are files in stageForRemoveDir,
-     * remove them from the current Commit.
+     * remove their reference from the current Commit,
+     * we can not remove the blobs, because other commit may refer it.
+     * <p>
      * recall that Repository.remove() have make sure that the
      * files in stagedForRemoveDir exist in the current commit.
      * <p>
      */
-    public void removeBlobs(File stagedForRemoveDir, File blobsDir) {
-        // remove file from current commit means remove reference of blob,
-        // not delete that blob, because other commit may refer this blob
+    public void removeBlobs(File stagedForRemoveDir) {
         for (File fileInStagedDir : Objects.requireNonNull(stagedForRemoveDir.listFiles())) {
             String fileInStagedDirSha1 = sha1((Object) readContents(fileInStagedDir));
             this.blobSha1List.remove(fileInStagedDirSha1);
