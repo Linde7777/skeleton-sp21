@@ -223,16 +223,13 @@ public class Repository {
             file.delete();
         }
 
-        setupBranch();
+        setupBranch(commitSha1);
     }
 
-    private static void setupBranch() throws IOException {
-        // the newest file in GITLET_COMMITS_DIR is the commit we just created,
-        // where the HEAD and active branch should point to
-        File theNewestCommitFile = getTheNewestFileInDir(GITLET_COMMITS_DIR);
-
-        // recall that in .gitlet/commits, the commits are named by its sha1
-        String theNewestCommitSha1 = theNewestCommitFile.getName();
+    /**
+     * set HEAD and active branch point to the newest commit
+     */
+    private static void setupBranch(String theNewestCommitSha1) throws IOException {
         String activeBranchName = readContentsAsString(GITLET_ACTIVE_BRANCH_FILE);
         File activeBranchFile = join(GITLET_BRANCHES_DIR, activeBranchName);
         writeContents(activeBranchFile, theNewestCommitSha1);
