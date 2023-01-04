@@ -65,8 +65,8 @@ public class Commit implements Serializable {
      * Thu Jan 01 00:00:00 CST 1970
      * <p>
      *
-     * @param message         The message of the commit
-     * @param parentSha1      the sha1 value of the parent of this Commit
+     * @param message    The message of the commit
+     * @param parentSha1 the sha1 value of the parent of this Commit
      */
     public Commit(String message, String parentSha1) {
         if (parentSha1 == null) {
@@ -105,31 +105,31 @@ public class Commit implements Serializable {
      *
      * @param stagedForAddDir the files in this directory will be committed
      * @param blobsDir        where store the blobs
-     * do distinguish them:
-     * blobsDir is .gitlet/blobs/
-     * blobDir is .gitlet/blobs/[sha1 value]
+     *                        do distinguish them:
+     *                        blobsDir is .gitlet/blobs/
+     *                        blobDir is .gitlet/blobs/[sha1 value]
      */
     public void addBlobs(File stagedForAddDir, File blobsDir) throws IOException {
         for (File stagedFile : Objects.requireNonNull(stagedForAddDir.listFiles())) {
             String fileSha1 = sha1((Object) readContents(stagedFile));
-
-            if (!this.blobSha1List.contains(fileSha1)) {
-
-                // if in the previous commit, there is hello.txt (version 1),
-                // and in the current commit, we are going to add hello.txt (version 2),
-                // we need to delete the reference of version 1
-                // (we can't delete the file of version 1, because other commit may refer it)
-                for (String blobSha1 : blobSha1List) {
-                    File blobDir = join(blobsDir, blobSha1);
-                    File blobFile = getTheOnlyFileInDir(blobDir);
-                    if (blobFile.getName().equals(stagedFile.getName())) {
-                        this.blobSha1List.remove(blobSha1);
-                    }
-                }
-
-                this.blobSha1List.add(fileSha1);
-                addFileInDir(join(blobsDir, fileSha1), stagedFile);
+            if (this.blobSha1List.contains(fileSha1)) {
+                continue;
             }
+
+            // if in the previous commit, there is hello.txt (version 1),
+            // and in the current commit, we are going to add hello.txt (version 2),
+            // we need to delete the reference of version 1
+            // (we can't delete the file of version 1, because other commit may refer it)
+            for (String blobSha1 : blobSha1List) {
+                File blobDir = join(blobsDir, blobSha1);
+                File blobFile = getTheOnlyFileInDir(blobDir);
+                if (blobFile.getName().equals(stagedFile.getName())) {
+                    this.blobSha1List.remove(blobSha1);
+                }
+            }
+
+            this.blobSha1List.add(fileSha1);
+            addFileInDir(join(blobsDir, fileSha1), stagedFile);
         }
     }
 
