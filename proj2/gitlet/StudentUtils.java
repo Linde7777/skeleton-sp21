@@ -1,8 +1,29 @@
 package gitlet;
 
 import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.Optional;
 
 public class StudentUtils {
+
+    public static File getTheNewestFileInDir(File dir) throws IOException {
+        // copied and adapted from https://www.baeldung.com/java-last-modified-file
+        Path dirPath = dir.toPath();
+        Optional<Path> opPath = Files.list(dirPath).filter(p -> !Files.isDirectory(p))
+                .sorted((p1, p2) -> Long.valueOf(p2.toFile().lastModified())
+                        .compareTo(p1.toFile().lastModified()))
+                .findFirst();
+        File theNewestFile;
+        if (opPath.isPresent()) {
+            theNewestFile = opPath.get().toFile();
+        } else {
+            throw new GitletException("find the newest commit failed");
+        }
+
+        return theNewestFile;
+    }
 
     /**
      * we have already designed that in certain directory,
