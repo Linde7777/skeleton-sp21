@@ -539,6 +539,7 @@ public class Repository {
         for (String filename : list) {
             System.out.println(filename);
         }
+        System.out.println();
 
         System.out.println("=== Untracked Files ===");
         for (File file : CWD.listFiles()) {
