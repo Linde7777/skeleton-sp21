@@ -656,7 +656,20 @@ public class Repository {
             Files.copy(src, dest, StandardCopyOption.REPLACE_EXISTING);
         }
 
-        //Also moves the current branch’s head to that commit node.
+        // Also moves the current branch’s head to that commit node.
         writeContents(HEAD_FILE, targetCommitId);
+        String theNameOfActiveBranch = readContentsAsString(GITLET_ACTIVE_BRANCH_FILE);
+        File activeBranchFile = join(GITLET_BRANCHES_DIR, theNameOfActiveBranch);
+        writeContents(activeBranchFile, targetCommit);
+
+        // you may ask here we modify HEAD_FILE, but why we don't modify ACTIVE_BRANCH_FILE?
+        // recall that if HEAD is in branch_A, and then it points to branch_B, in this case we
+        // need to modify ACTIVE_BRANCH_FILE,
+        // now what HEAD doing is to point to a previous commit of a branch,
+        // it doesn't point to another branch, so we don't need to modify ACTIVE_BRANCH
+    }
+
+    public static void merge(String branchName) {
+
     }
 }
