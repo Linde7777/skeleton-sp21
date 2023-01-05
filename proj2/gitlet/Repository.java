@@ -579,16 +579,16 @@ public class Repository {
         }
 
         for (File file : Objects.requireNonNull(GITLET_STAGE_FOR_ADD_DIR.listFiles())) {
-            File fileInCWDWithSameName = join(CWD, file.getName());
-            // Staged for addition
-            if (fileInCWDWithSameName.exists()) {
+            if (join(CWD, file.getName()).exists()) {
+                // if the file is staged for addition,
                 // but with different contents than in the working directory
                 if (!sha1(readContentsAsString(file)).equals(
-                        sha1(readContentsAsString(fileInCWDWithSameName)))) {
+                        sha1(readContentsAsString(join(CWD, file.getName()))))) {
                     list.add(file.getName());
                 }
             } else {
-                // but deleted in the working directory
+                // if the "file in stagedForAddDir" is deleted
+                // in the working directory
                 list.add(file.getName());
             }
         }
