@@ -396,8 +396,7 @@ public class Repository {
      * that’s already there if there is one. The new version of the file is not staged.
      */
     public static void checkoutCommitAndFilename(String commitId, String filename) throws IOException {
-        Commit commit = getCommitByIncompleteSha1(commitId);
-
+        Commit commit = getCommitBySha1(getCompletedSha1(commitId));
         if (commit == null) {
             System.out.println("No commit with that id exists.");
             System.exit(0);
@@ -422,10 +421,10 @@ public class Repository {
     }
 
     /**
-     * get Commit by its id, commitId can be abbreviated
+     * @param commitId the abbreviated commit sha1
      */
-    private static Commit getCommitByIncompleteSha1(String commitId) {
-        Commit commit = null;
+    private static String getCompletedSha1(String commitId) {
+        String completedSha1 = null;
         int len = commitId.length();
         if (commitId.length() < 2) {
             throw new GitletException("The commit id must have at least 2 digits in length.");
@@ -454,13 +453,12 @@ public class Repository {
                     throw new GitletException("commit id is not long enough to distinguish a commit");
                 } else {
                     foundAFileSimilarToCommitId = true;
-                    File commitFile = join(commitDir, filename);
-                    commit = readObject(commitFile, Commit.class);
+                    completedSha1 = filename;
                 }
             }
         }
 
-        return commit;
+        return completedSha1;
     }
 
     /**
