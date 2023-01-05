@@ -21,6 +21,30 @@ public class Main {
     public static final File GITLET_DIR = join(CWD, ".gitlet");
 
     /**
+     * If the args.length is less or more than function's need,
+     * quit the entire program.
+     * for example:
+     * <p>
+     * for init(),
+     * the args should be ["init"], i.e. args.length should be 1
+     * <p>
+     * for branch(String branchName)
+     * the args should be ["branch","someBranchName"],
+     * i.e. args.length should be 2
+     *
+     * @param args   arguments passed to the function.
+     * @param length the length of the arguments that function should take
+     */
+    private static void checkFuncArgumentLength(String[] args, int length) {
+        // the first element in args is the function name
+        if (args.length > length) {
+            System.out.println("Incorrect operands.");
+            System.exit(0);
+        }
+    }
+
+
+    /**
      * Usage: java gitlet.Main ARGS, where ARGS contains
      * <COMMAND> <OPERAND1> <OPERAND2> ...
      */
@@ -33,48 +57,60 @@ public class Main {
         String firstArg = args[0];
         switch (firstArg) {
             case "init":
+                checkFuncArgumentLength(args, 1);
                 Repository.init();
                 break;
             case "add":
+                checkFuncArgumentLength(args, 2);
                 String filenameForAdd = args[1];
                 Repository.add(filenameForAdd);
                 break;
             case "commit":
+                checkFuncArgumentLength(args, 2);
                 String message = args[1];
                 Repository.setUpCommit(message);
                 break;
             case "rm":
+                checkFuncArgumentLength(args, 2);
                 String filenameForRemove = args[1];
                 Repository.remove(filenameForRemove);
                 break;
             case "log":
+                checkFuncArgumentLength(args, 1);
                 Repository.log();
                 break;
             case "checkout":
                 if (args[1].equals("--")) {
+                    checkFuncArgumentLength(args, 3);
                     String filename = args[2];
                     Repository.checkoutFilename(filename);
                 } else if (args[2].equals("--")) {
+                    checkFuncArgumentLength(args, 4);
                     String commitId = args[1];
                     String filename = args[3];
                     Repository.checkoutCommitAndFilename(commitId, filename);
                 } else {
+                    checkFuncArgumentLength(args, 2);
                     String branchName = args[1];
                     Repository.checkoutBranchName(branchName);
                 }
                 break;
             case "branch":
+                checkFuncArgumentLength(args,2);
                 String branchToBeCreatedName = args[1];
                 Repository.branch(branchToBeCreatedName);
                 break;
             case "rm-branch":
+                checkFuncArgumentLength(args,2);
                 String branchToBeRemovedName = args[1];
                 Repository.removeBranch(branchToBeRemovedName);
                 break;
             case "status":
+                checkFuncArgumentLength(args,1);
                 Repository.status();
                 break;
             case "reset":
+                checkFuncArgumentLength(args,2);
                 String commitId = args[1];
                 Repository.reset(commitId);
                 break;
@@ -82,7 +118,6 @@ public class Main {
                 System.out.println("No command with that name exists.");
                 break;
         }
-
 
     }
 
