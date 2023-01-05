@@ -70,7 +70,9 @@ public class Main {
             case "rm-branch":
                 String branchToBeRemovedName = args[1];
                 Repository.removeBranch(branchToBeRemovedName);
-
+                break;
+            case "status":
+                Repository.status();
             default:
                 System.out.println("No command with that name exists.");
                 break;
