@@ -422,8 +422,7 @@ public class Repository {
     }
 
     /**
-     * sha1 of a commit is a 40 bit hexadecimal number,
-     * but you can also get it by 2 bit or more hexadecimal.
+     * get Commit by its id, commitId can be abbreviated
      */
     private static Commit getCommitByIncompleteSha1(String commitId) {
         Commit commit = null;
