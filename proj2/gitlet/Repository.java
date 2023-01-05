@@ -511,8 +511,6 @@ public class Repository {
     }
 
     public static void status() {
-        // todo: sort list in in lexicographic order,
-        // using the Java string-comparison order (the asterisk doesn’t count)
         String theNameOfTheActiveBranch = readContentsAsString(GITLET_ACTIVE_BRANCH_FILE);
         System.out.println("=== Branches ===");
         System.out.println("*" + theNameOfTheActiveBranch);
@@ -539,9 +537,8 @@ public class Repository {
         List<String> list = getModifiedButNotStagedFilesInCWD();
         System.out.println("=== Modifications Not Staged For Commit ===");
         for (String filename : list) {
-
+            System.out.println(filename);
         }
-
 
         System.out.println("=== Untracked Files ===");
         for (File file : CWD.listFiles()) {
@@ -566,6 +563,7 @@ public class Repository {
     private static List<String> getModifiedButNotStagedFilesInCWD() {
         List<String> list = new ArrayList<>();
         Commit currentCommit = getCommitBySha1(getHeadCommitSha1());
+
         for (String blobSha1 : currentCommit.blobSha1List) {
             File blobFile = getBlobFile(blobSha1);
             File fileInCWDWithSameName = join(CWD, blobFile.getName());
@@ -606,7 +604,7 @@ public class Repository {
                 list.add(blobFile.getName());
             }
         }
-
+        Collections.sort(list);
         return list;
     }
 
