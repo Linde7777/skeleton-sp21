@@ -156,6 +156,7 @@ public class Repository {
         return readObject(file, Commit.class);
     }
 
+
     /**
      * notice that this is the public method
      */
@@ -202,6 +203,9 @@ public class Repository {
         deleteAllFilesInDir(GITLET_STAGE_FOR_REMOVE);
     }
 
+    private static File getBlobFile(String blobSha1) {
+        return getTheOnlyFileInDir(join(GITLET_BLOBS_DIR, blobSha1));
+    }
 
     /**
      * serialize a Commit class in the GITLET_COMMITS_DIR/[first 2 sha1 digit]/[40 bit sha1 digit]
@@ -394,7 +398,6 @@ public class Repository {
     public static void checkoutCommitAndFilename(String commitId, String filename) throws IOException {
         Commit commit = getCommitByIncompleteSha1(commitId);
 
-        //Commit commit = getCommitBySha1(commitId);
         if (commit == null) {
             System.out.println("No commit with that id exists.");
             System.exit(0);
@@ -411,6 +414,7 @@ public class Repository {
                 Files.copy(src, dest, StandardCopyOption.REPLACE_EXISTING);
             }
         }
+
         if (!findThisFileInCurrentCommit) {
             System.out.println("File does not exist in that commit.");
         }
