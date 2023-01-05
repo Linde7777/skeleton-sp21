@@ -608,4 +608,44 @@ public class Repository {
         return list;
     }
 
+    /**
+     * Copied from gitlet spec:
+     * Checks out all the files tracked by the given commit.
+     * Removes tracked files that are not present in that commit.
+     * Also moves the current branch’s head to that commit node.
+     * @param commitId commitId can be abbreviated as for checkout
+     */
+    public static void reset(String commitId) {
+        Commit targetCommit = getCommitByIncompleteSha1(commitId);
+        if (targetCommit == null) {
+            System.out.println("No commit with that id exists.");
+            System.exit(0);
+        }
+
+        Commit currentCommit = getCommitBySha1(getHeadCommitSha1());
+        for (File CWDFile : CWD.listFiles()) {
+            String CWDFileSha1 = sha1(readContents(CWDFile));
+            // if a working file is untracked in the current branch
+            if (!currentCommit.blobSha1List.contains(CWDFileSha1)) {
+                // and would be overwritten by the reset
+                if (targetCommit.blobSha1List.contains(CWDFileSha1)) {
+                    System.out.println("There is an untracked file in the way; delete it, or add and commit it first.");
+                    System.exit(0);
+                }
+            }
+        }
+
+        for (File CWDFile : CWD.listFiles()) {
+            String CWDFileSha1 = sha1(readContents(CWDFile));
+            // if a CWDFile is tracked in currentCommit,
+            // but not in targetCommit, then we remove it
+            if (currentCommit.blobSha1List.contains(CWDFileSha1)
+                    && !targetCommit.blobSha1List.contains(CWDFileSha1)) {
+                CWDFile.delete();
+            }
+        }
+        // then check out all the files in the targetCommit
+
+        //Also moves the current branch’s head to that commit node.
+    }
 }
