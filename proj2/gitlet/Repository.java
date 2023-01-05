@@ -418,11 +418,8 @@ public class Repository {
     }
 
     /**
-     * sha1 of a commit is 40 bit hexadecimal,
-     * but you can also get it by
-     *
-     * @param commitId
-     * @return
+     * sha1 of a commit is a 40 bit hexadecimal number,
+     * but you can also get it by 2 bit or more hexadecimal.
      */
     private static Commit getCommitByIncompleteSha1(String commitId) {
         Commit commit = null;
@@ -432,7 +429,10 @@ public class Repository {
         }
         String firstTwoSha1 = commitId.substring(0, 2);
         File commitDir = join(GITLET_COMMITS_DIR, firstTwoSha1);
-        List<String> list = plainFilenamesIn(commitDir);
+        List<String> filenamesInCommitDir = plainFilenamesIn(commitDir);
+        if (filenamesInCommitDir == null) {
+            return null;
+        }
 
         /*
         let's say commitId is 3ac
@@ -442,8 +442,8 @@ public class Repository {
         we don't know what commit should we pick.
          */
         boolean foundAFileSimilarToCommitId = false;
-        for (String filenameInDir : list) {
-            if (filenameInDir.substring(0, len).equals(commitId)) {
+        for (String filename : filenamesInCommitDir) {
+            if (filename.substring(0, len).equals(commitId)) {
                 // if it has already found a file similar to commit id,
                 // and now it found again, that means there are at least
                 // two files that are similar to commit id
@@ -451,11 +451,12 @@ public class Repository {
                     throw new GitletException("commit id is not long enough to distinguish a commit");
                 } else {
                     foundAFileSimilarToCommitId = true;
-                    File commitFile = join(commitDir, filenameInDir);
+                    File commitFile = join(commitDir, filename);
                     commit = readObject(commitFile, Commit.class);
                 }
             }
         }
+
         return commit;
     }
 
