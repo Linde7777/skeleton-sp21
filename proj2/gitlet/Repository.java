@@ -448,8 +448,8 @@ public class Repository {
             restrictedDelete(file);
         }
 
-        String activeBranchSha1 = readContentsAsString(targetBranchFile);
-        Commit commit = getCommitBySha1(activeBranchSha1);
+        String targetBranchSha1 = readContentsAsString(targetBranchFile);
+        Commit commit = getCommitBySha1(targetBranchSha1);
         for (String blobSha1 : commit.blobSha1List) {
             File file = getBlobFile(blobSha1);
             Path src = file.toPath();
