@@ -510,7 +510,104 @@ public class Repository {
         writeContents(GITLET_ACTIVE_BRANCH_FILE, targetBranchName);
     }
 
-    private static File getBlobFile(String blobSha1) {
-        return getTheOnlyFileInDir(join(GITLET_BLOBS_DIR, blobSha1));
+    public static void status() {
+        // todo: sort list in in lexicographic order,
+        // using the Java string-comparison order (the asterisk doesn’t count)
+        String theNameOfTheActiveBranch = readContentsAsString(GITLET_ACTIVE_BRANCH_FILE);
+        System.out.println("=== Branches ===");
+        System.out.println("*" + theNameOfTheActiveBranch);
+        for (String filename : Objects.requireNonNull(plainFilenamesIn(GITLET_BRANCHES_DIR))) {
+            if (filename.equals(theNameOfTheActiveBranch)) {
+                continue;
+            }
+            System.out.println(filename);
+        }
+        System.out.println();
+
+        System.out.println("== Staged Files ===");
+        for (String filename : Objects.requireNonNull(plainFilenamesIn(GITLET_STAGE_FOR_ADD_DIR))) {
+            System.out.println(filename);
+        }
+        System.out.println();
+
+        System.out.println("=== Removed Files ===");
+        for (String filename : Objects.requireNonNull(plainFilenamesIn(GITLET_STAGE_FOR_REMOVE))) {
+            System.out.println(filename);
+        }
+        System.out.println();
+
+        List<String> list = getModifiedButNotStagedFilesInCWD();
+        System.out.println("=== Modifications Not Staged For Commit ===");
+        for (String filename : list) {
+
+        }
+
+
+        System.out.println("=== Untracked Files ===");
+        for (File file : CWD.listFiles()) {
+            if (!join(GITLET_STAGE_FOR_ADD_DIR, file.getName()).exists()) {
+                System.out.println(file.getName());
+            }
+        }
+        System.out.println();
+
     }
+
+    /**
+     * Copied from gitlet spec:
+     * A file in the working directory is “modified but not staged” if it is:
+     * Tracked in the current commit, changed in the working directory, but not staged; or
+     * Staged for addition, but with different contents than in the working directory; or
+     * Staged for addition, but deleted in the working directory; or
+     * Not staged for removal, but tracked in the current commit and deleted from the working directory.
+     *
+     * @return the names of the files
+     */
+    private static List<String> getModifiedButNotStagedFilesInCWD() {
+        List<String> list = new ArrayList<>();
+        Commit currentCommit = getCommitBySha1(getHeadCommitSha1());
+        for (String blobSha1 : currentCommit.blobSha1List) {
+            File blobFile = getBlobFile(blobSha1);
+            File fileInCWDWithSameName = join(CWD, blobFile.getName());
+            // tracked in the current commit
+            if (fileInCWDWithSameName.exists()) {
+                // changed in the working directory
+                if (!sha1(readContentsAsString(fileInCWDWithSameName)).equals(blobSha1)) {
+                    // but not staged
+                    if (!join(GITLET_STAGE_FOR_ADD_DIR, blobFile.getName()).exists()
+                            || !join(GITLET_STAGE_FOR_REMOVE, blobFile.getName()).exists()) {
+                        list.add(blobFile.getName());
+                    }
+                }
+            }
+        }
+
+        for (File file : Objects.requireNonNull(GITLET_STAGE_FOR_ADD_DIR.listFiles())) {
+            File fileInCWDWithSameName = join(CWD, file.getName());
+            // Staged for addition
+            if (fileInCWDWithSameName.exists()) {
+                // but with different contents than in the working directory
+                if (!sha1(readContentsAsString(file)).equals(
+                        sha1(readContentsAsString(fileInCWDWithSameName)))) {
+                    list.add(file.getName());
+                }
+            } else {
+                // but deleted in the working directory
+                list.add(file.getName());
+            }
+        }
+
+        // there is a file tracked in current commit, but it disappears in CWD,
+        // and it is not in stageForRemoveDir
+        for (String blobSha1 : currentCommit.blobSha1List) {
+            File blobFile = getBlobFile(blobSha1);
+            if (!join(CWD, blobFile.getName()).exists() &&
+                    !join(GITLET_STAGE_FOR_REMOVE, blobFile.getName()).exists()) {
+                list.add(blobFile.getName());
+            }
+        }
+
+        return list;
+    }
+
 }
