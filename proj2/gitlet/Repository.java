@@ -392,11 +392,14 @@ public class Repository {
      * that’s already there if there is one. The new version of the file is not staged.
      */
     public static void checkoutCommitAndFilename(String commitId, String filename) throws IOException {
-        Commit commit = getCommitBySha1(commitId);
+        Commit commit = getCommitByIncompleteSha1(commitId);
+
+        //Commit commit = getCommitBySha1(commitId);
         if (commit == null) {
             System.out.println("No commit with that id exists.");
             System.exit(0);
         }
+
         boolean findThisFileInCurrentCommit = false;
         for (String blobSha1 : commit.blobSha1List) {
             // recall that blob are stored like: .gitlet/blobs/40 bit sha1 value/hello.txt
@@ -412,6 +415,48 @@ public class Repository {
             System.out.println("File does not exist in that commit.");
         }
 
+    }
+
+    /**
+     * sha1 of a commit is 40 bit hexadecimal,
+     * but you can also get it by
+     *
+     * @param commitId
+     * @return
+     */
+    private static Commit getCommitByIncompleteSha1(String commitId) {
+        Commit commit = null;
+        int len = commitId.length();
+        if (commitId.length() < 2) {
+            throw new GitletException("The commit id must have at least 2 digits in length.");
+        }
+        String firstTwoSha1 = commitId.substring(0, 2);
+        File commitDir = join(GITLET_COMMITS_DIR, firstTwoSha1);
+        List<String> list = plainFilenamesIn(commitDir);
+
+        /*
+        let's say commitId is 3ac
+        and in the .gitlet/commits/3a/ directory
+        there are two files: 3acb12 and 3ac891
+        3ac is not long enough to distinguish the two files,
+        we don't know what commit should we pick.
+         */
+        boolean foundAFileSimilarToCommitId = false;
+        for (String filenameInDir : list) {
+            if (filenameInDir.substring(0, len).equals(commitId)) {
+                // if it has already found a file similar to commit id,
+                // and now it found again, that means there are at least
+                // two files that are similar to commit id
+                if (foundAFileSimilarToCommitId) {
+                    throw new GitletException("commit id is not long enough to distinguish a commit");
+                } else {
+                    foundAFileSimilarToCommitId = true;
+                    File commitFile = join(commitDir, filenameInDir);
+                    commit = readObject(commitFile, Commit.class);
+                }
+            }
+        }
+        return commit;
     }
 
     /**
