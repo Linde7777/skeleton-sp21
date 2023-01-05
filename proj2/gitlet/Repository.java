@@ -611,10 +611,12 @@ public class Repository {
      * Checks out all the files tracked by the given commit.
      * Removes tracked files that are not present in that commit.
      * Also moves the current branch’s head to that commit node.
+     *
      * @param commitId commitId can be abbreviated as for checkout
      */
-    public static void reset(String commitId) {
-        Commit targetCommit = getCommitByIncompleteSha1(commitId);
+    public static void reset(String commitId) throws IOException {
+        String completedSha1 = getCompletedSha1(commitId);
+        Commit targetCommit = getCommitBySha1(completedSha1);
         if (targetCommit == null) {
             System.out.println("No commit with that id exists.");
             System.exit(0);
@@ -642,8 +644,16 @@ public class Repository {
                 CWDFile.delete();
             }
         }
-        // then check out all the files in the targetCommit
+
+        // check out all the files in the targetCommit
+        for (String blobSha1 : targetCommit.blobSha1List) {
+            File blobFile = getBlobFile(blobSha1);
+            Path src = blobFile.toPath();
+            Path dest = join(CWD, blobFile.getName()).toPath();
+            Files.copy(src, dest, StandardCopyOption.REPLACE_EXISTING);
+        }
 
         //Also moves the current branch’s head to that commit node.
+        writeContents(HEAD_FILE, completedSha1);
     }
 }
