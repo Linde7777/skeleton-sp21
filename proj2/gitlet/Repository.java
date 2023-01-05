@@ -564,12 +564,12 @@ public class Repository {
 
         for (String blobSha1 : currentCommit.blobSha1List) {
             File blobFile = getBlobFile(blobSha1);
-            File fileInCWDWithSameName = join(CWD, blobFile.getName());
-            // tracked in the current commit
-            if (fileInCWDWithSameName.exists()) {
-                // changed in the working directory
-                if (!sha1(readContentsAsString(fileInCWDWithSameName)).equals(blobSha1)) {
-                    // but not staged
+            File CWDFileTrackedInCurrentCommit = join(CWD, blobFile.getName());
+            // if a file in CWD is tracked in the current commit
+            if (CWDFileTrackedInCurrentCommit.exists()) {
+                // and it is changed in the working directory
+                if (!sha1(readContentsAsString(CWDFileTrackedInCurrentCommit)).equals(blobSha1)) {
+                    // but it is not staged
                     if (!join(GITLET_STAGE_FOR_ADD_DIR, blobFile.getName()).exists()
                             || !join(GITLET_STAGE_FOR_REMOVE, blobFile.getName()).exists()) {
                         list.add(blobFile.getName());
