@@ -486,15 +486,15 @@ public class Repository {
             System.exit(0);
         }
 
-        for (File file : CWD.listFiles()) {
-            if (!join(GITLET_STAGE_FOR_ADD_DIR, file.getName()).exists()) {
+        for (File CWDFile : CWD.listFiles()) {
+            if (!join(GITLET_STAGE_FOR_ADD_DIR, CWDFile.getName()).exists()) {
                 System.out.println("There is an untracked file in the way; delete it, or add and commit it first.");
                 System.exit(0);
             }
         }
 
-        for (File file : Objects.requireNonNull(CWD.listFiles())) {
-            restrictedDelete(file);
+        for (File CWDFile : Objects.requireNonNull(CWD.listFiles())) {
+            restrictedDelete(CWDFile);
         }
 
         String targetBranchSha1 = readContentsAsString(targetBranchFile);
@@ -541,9 +541,9 @@ public class Repository {
         System.out.println();
 
         System.out.println("=== Untracked Files ===");
-        for (File file : CWD.listFiles()) {
-            if (!join(GITLET_STAGE_FOR_ADD_DIR, file.getName()).exists()) {
-                System.out.println(file.getName());
+        for (File CWDFile : CWD.listFiles()) {
+            if (!join(GITLET_STAGE_FOR_ADD_DIR, CWDFile.getName()).exists()) {
+                System.out.println(CWDFile.getName());
             }
         }
         System.out.println();
