@@ -82,7 +82,7 @@ public class Repository {
      * notice that we won't call add() then call commit(),
      * we will call setUpCommit() instead.
      */
-    public static void init() throws IOException {
+    public static void init() {
         if (!GITLET_DIR.exists()) {
             GITLET_DIR.mkdir();
         } else {
@@ -94,18 +94,24 @@ public class Repository {
         GITLET_BLOBS_DIR.mkdir();
         GITLET_COMMITS_DIR.mkdir();
         GITLET_BRANCHES_DIR.mkdir();
-        GITLET_ACTIVE_BRANCH_FILE.createNewFile();
-        master_FILE.createNewFile();
-        HEAD_FILE.createNewFile();
-        writeContents(GITLET_ACTIVE_BRANCH_FILE, "master");
-        setUpFirstCommit();
+        try {
+            GITLET_ACTIVE_BRANCH_FILE.createNewFile();
+            master_FILE.createNewFile();
+            HEAD_FILE.createNewFile();
+            writeContents(GITLET_ACTIVE_BRANCH_FILE, "master");
+            setUpFirstCommit();
+        } catch (IOException excp) {
+            throw new GitletException(excp.getMessage());
+        }
+
     }
 
-    private static void setUpFirstCommit() throws IOException {
+    private static void setUpFirstCommit() {
         String message = "init commit";
         Commit commit = new Commit(message);
         String commitSha1 = serializeCommit(commit);
         setupBranch(commitSha1);
+
     }
 
     /**
@@ -115,7 +121,7 @@ public class Repository {
      *
      * @param filename the file we want to add
      */
-    public static void add(String filename) throws IOException {
+    public static void add(String filename) {
         checkInitialize();
         File file = join(CWD, filename);
         if (!file.exists()) {
@@ -134,7 +140,11 @@ public class Repository {
 
         Path src = file.toPath();
         Path dest = join(GITLET_STAGE_FOR_ADD_DIR, file.getName()).toPath();
-        Files.copy(src, dest, StandardCopyOption.REPLACE_EXISTING);
+        try {
+            Files.copy(src, dest, StandardCopyOption.REPLACE_EXISTING);
+        } catch (IOException excp) {
+            throw new GitletException(excp.getMessage());
+        }
     }
 
     private static String getHeadCommitSha1() {
@@ -160,7 +170,7 @@ public class Repository {
     /**
      * notice that this is the public method
      */
-    public static void setUpCommit(String message) throws IOException {
+    public static void setUpCommit(String message) {
         checkInitialize();
         String HEADSha1 = getHeadCommitSha1();
         setUpCommit(message, HEADSha1);
@@ -181,7 +191,7 @@ public class Repository {
      * @param message    the message of this commit
      * @param parentSha1 the sha1 value of the parent commit
      */
-    private static void setUpCommit(String message, String parentSha1) throws IOException {
+    private static void setUpCommit(String message, String parentSha1) {
         checkInitialize();
         if (Objects.requireNonNull(GITLET_STAGE_FOR_ADD_DIR.list()).length == 0
                 && Objects.requireNonNull(GITLET_STAGE_FOR_REMOVE.list()).length == 0) {
@@ -192,12 +202,15 @@ public class Repository {
         Commit commit = getCommitBySha1(getHeadCommitSha1());
         assert commit != null;
         commit.modifyCommit(message, parentSha1);
-        commit.addBlobs(GITLET_STAGE_FOR_ADD_DIR, GITLET_BLOBS_DIR);
-        commit.removeBlobs(GITLET_STAGE_FOR_REMOVE);
+        try {
+            commit.addBlobs(GITLET_STAGE_FOR_ADD_DIR, GITLET_BLOBS_DIR);
+            commit.removeBlobs(GITLET_STAGE_FOR_REMOVE);
 
-        String commitSha1 = serializeCommit(commit);
-
-        setupBranch(commitSha1);
+            String commitSha1 = serializeCommit(commit);
+            setupBranch(commitSha1);
+        } catch (IOException excp) {
+            throw new GitletException(excp.getMessage());
+        }
 
         deleteAllFilesInDir(GITLET_STAGE_FOR_ADD_DIR);
         deleteAllFilesInDir(GITLET_STAGE_FOR_REMOVE);
@@ -218,7 +231,7 @@ public class Repository {
      * @param commit the commit we want to serialize
      * @return the sha1 of the commit
      */
-    private static String serializeCommit(Commit commit) throws IOException {
+    private static String serializeCommit(Commit commit) {
         File commitFile = join(GITLET_COMMITS_DIR, "tempCommitName");
         writeObject(commitFile, commit);
         String commitSha1 = sha1((Object) readContents(commitFile));
@@ -229,7 +242,11 @@ public class Repository {
         }
         Path src = commitFile.toPath();
         Path dest = join(commitDir, commitSha1).toPath();
-        Files.copy(src, dest, StandardCopyOption.REPLACE_EXISTING);
+        try {
+            Files.copy(src, dest, StandardCopyOption.REPLACE_EXISTING);
+        } catch (IOException excp) {
+            throw new GitletException(excp.getMessage());
+        }
 
         return commitSha1;
     }
@@ -253,7 +270,7 @@ public class Repository {
      *
      * @param filename the name of the file that we want to remove
      */
-    public static void remove(String filename) throws IOException {
+    public static void remove(String filename) {
         boolean findFileInStageForAddDir = false;
         File[] filesInStageForAddDir = GITLET_STAGE_FOR_ADD_DIR.listFiles();
         // if filesInStageForAddDir is null, it is ok, we don't need to do anything,
@@ -279,7 +296,11 @@ public class Repository {
                     findFileInCurrentCommit = true;
                     Path src = currCommitBlobFile.toPath();
                     Path dest = join(GITLET_STAGE_FOR_REMOVE, filename).toPath();
-                    Files.copy(src, dest, StandardCopyOption.REPLACE_EXISTING);
+                    try {
+                        Files.copy(src, dest, StandardCopyOption.REPLACE_EXISTING);
+                    } catch (IOException excp) {
+                        throw new GitletException(excp.getMessage());
+                    }
 
                     File file = join(CWD, filename);
                     if (file.exists()) {
@@ -337,10 +358,14 @@ public class Repository {
             */
     }
 
-    public static void branch(String branchName) throws IOException {
+    public static void branch(String branchName) {
         File branchFile = join(GITLET_BRANCHES_DIR, branchName);
         if (!branchFile.exists()) {
-            branchFile.createNewFile();
+            try {
+                branchFile.createNewFile();
+            } catch (IOException excp) {
+                throw new GitletException(excp.getMessage());
+            }
         } else {
             System.out.println("A branch with that name already exists.");
             System.exit(0);
@@ -372,7 +397,7 @@ public class Repository {
      * that’s already there if there is one.
      * The new version of the file is not staged.
      */
-    public static void checkoutFilename(String filename) throws IOException {
+    public static void checkoutFilename(String filename) {
         boolean findThisFileInCurrentCommit = false;
         Commit commit = getCommitBySha1(getHeadCommitSha1());
         for (String blobSha1 : commit.blobSha1List) {
@@ -382,7 +407,11 @@ public class Repository {
                 findThisFileInCurrentCommit = true;
                 Path src = blobFile.toPath();
                 Path dest = join(CWD, blobFile.getName()).toPath();
-                Files.copy(src, dest, StandardCopyOption.REPLACE_EXISTING);
+                try {
+                    Files.copy(src, dest, StandardCopyOption.REPLACE_EXISTING);
+                } catch (IOException excp) {
+                    throw new GitletException(excp.getMessage());
+                }
             }
         }
 
@@ -397,7 +426,7 @@ public class Repository {
      * and puts it in the working directory, overwriting the version of the file
      * that’s already there if there is one. The new version of the file is not staged.
      */
-    public static void checkoutCommitAndFilename(String commitId, String filename) throws IOException {
+    public static void checkoutCommitAndFilename(String commitId, String filename) {
         Commit commit = getCommitBySha1(getCompletedSha1(commitId));
         if (commit == null) {
             System.out.println("No commit with that id exists.");
@@ -412,7 +441,11 @@ public class Repository {
                 findThisFileInCurrentCommit = true;
                 Path src = blobFile.toPath();
                 Path dest = join(CWD, blobFile.getName()).toPath();
-                Files.copy(src, dest, StandardCopyOption.REPLACE_EXISTING);
+                try {
+                    Files.copy(src, dest, StandardCopyOption.REPLACE_EXISTING);
+                } catch (IOException excp) {
+                    throw new GitletException(excp.getMessage());
+                }
             }
         }
 
@@ -474,7 +507,7 @@ public class Repository {
      * are deleted. The staging area is cleared, unless the checked-out
      * branch is the current branch
      */
-    public static void checkoutBranchName(String targetBranchName) throws IOException {
+    public static void checkoutBranchName(String targetBranchName) {
         File targetBranchFile = join(GITLET_BRANCHES_DIR, targetBranchName);
         if (!targetBranchFile.exists()) {
             System.out.println("No such branch exists.");
@@ -504,7 +537,11 @@ public class Repository {
             File file = getBlobFile(blobSha1);
             Path src = file.toPath();
             Path dest = join(CWD, file.getName()).toPath();
-            Files.copy(src, dest, StandardCopyOption.REPLACE_EXISTING);
+            try {
+                Files.copy(src, dest, StandardCopyOption.REPLACE_EXISTING);
+            } catch (IOException excp) {
+                throw new GitletException(excp.getMessage());
+            }
         }
 
         writeContents(GITLET_ACTIVE_BRANCH_FILE, targetBranchName);
@@ -617,7 +654,7 @@ public class Repository {
      *
      * @param commitId commitId can be abbreviated as for checkout
      */
-    public static void reset(String commitId) throws IOException {
+    public static void reset(String commitId) {
         String targetCommitId = getCompletedSha1(commitId);
         Commit targetCommit = getCommitBySha1(targetCommitId);
         if (targetCommit == null) {
@@ -653,7 +690,11 @@ public class Repository {
             File blobFile = getBlobFile(blobSha1);
             Path src = blobFile.toPath();
             Path dest = join(CWD, blobFile.getName()).toPath();
-            Files.copy(src, dest, StandardCopyOption.REPLACE_EXISTING);
+            try {
+                Files.copy(src, dest, StandardCopyOption.REPLACE_EXISTING);
+            } catch (IOException excp) {
+                throw new GitletException(excp.getMessage());
+            }
         }
 
         // Also moves the current branch’s head to that commit node.
