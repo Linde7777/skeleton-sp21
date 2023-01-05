@@ -615,8 +615,8 @@ public class Repository {
      * @param commitId commitId can be abbreviated as for checkout
      */
     public static void reset(String commitId) throws IOException {
-        String completedSha1 = getCompletedSha1(commitId);
-        Commit targetCommit = getCommitBySha1(completedSha1);
+        String targetCommitId = getCompletedSha1(commitId);
+        Commit targetCommit = getCommitBySha1(targetCommitId);
         if (targetCommit == null) {
             System.out.println("No commit with that id exists.");
             System.exit(0);
@@ -654,6 +654,6 @@ public class Repository {
         }
 
         //Also moves the current branch’s head to that commit node.
-        writeContents(HEAD_FILE, completedSha1);
+        writeContents(HEAD_FILE, targetCommitId);
     }
 }
