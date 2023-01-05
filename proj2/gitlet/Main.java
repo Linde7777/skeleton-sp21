@@ -73,6 +73,11 @@ public class Main {
                 break;
             case "status":
                 Repository.status();
+                break;
+            case "reset":
+                String commitId = args[1];
+                Repository.reset(commitId);
+                break;
             default:
                 System.out.println("No command with that name exists.");
                 break;
