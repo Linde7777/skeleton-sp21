@@ -170,7 +170,6 @@ public class Repository {
         return readObject(file, Commit.class);
     }
 
-
     /**
      * notice that this is the public method
      */
@@ -596,17 +595,41 @@ public class Repository {
         }
         System.out.println();
 
+
+        // The final category (“Untracked Files”) is for files present in the
+        // working directory but neither staged for addition nor tracked.
+        // This includes files that have been staged for removal,
+        // but then re-created without Gitlet’s knowledge.
+        Commit currentCommit = getCommitBySha1(getHeadCommitSha1());
+        List<String> filenamesInCommit = getFilenamesInCommit(currentCommit);
         System.out.println("=== Untracked Files ===");
         for (File CWDFile : CWD.listFiles()) {
-            if (!join(GITLET_STAGE_FOR_ADD_DIR, CWDFile.getName()).exists()) {
-                if (CWDFile.getName().equals(".gitlet")) {
-                    continue;
-                }
+            if (!filenamesInCommit.contains(CWDFile.getName())
+                    && (!join(GITLET_STAGE_FOR_ADD_DIR, CWDFile.getName()).exists()
+                    || !join(GITLET_STAGE_FOR_REMOVE, CWDFile.getName()).exists())) {
                 System.out.println(CWDFile.getName());
             }
         }
         System.out.println();
 
+    }
+
+    private static List<File> getFilesInCommit(Commit commit) {
+        List<File> list = new ArrayList<>();
+        for (String blobSha1 : commit.getBlobSha1List()) {
+            File file = getBlobFile(blobSha1);
+            list.add(file);
+        }
+        return list;
+    }
+
+    private static List<String> getFilenamesInCommit(Commit commit) {
+        List<String> list = new ArrayList<>();
+        for (String blobSha1 : commit.getBlobSha1List()) {
+            File file = getBlobFile(blobSha1);
+            list.add(file.getName());
+        }
+        return list;
     }
 
     /**
