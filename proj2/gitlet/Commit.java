@@ -44,7 +44,11 @@ public class Commit implements Serializable {
     /**
      * where store the sha1 value of blobs
      */
-    LinkedList<String> blobSha1List;
+    private LinkedList<String> blobSha1List;
+
+    public LinkedList<String> getBlobSha1List() {
+        return blobSha1List;
+    }
 
     /**
      * The sha1 value of the parent of this Commit.

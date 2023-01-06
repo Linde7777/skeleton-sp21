@@ -134,7 +134,7 @@ public class Repository {
         // to one of the files in the current Commit
         String fileSha1 = sha1((Object) readContents(file));
         Commit currentCommit = getCommitBySha1(getHeadCommitSha1());
-        if (currentCommit != null && currentCommit.blobSha1List.contains(fileSha1)) {
+        if (currentCommit != null && currentCommit.getBlobSha1List().contains(fileSha1)) {
             System.exit(0);
         }
 
@@ -290,7 +290,7 @@ public class Repository {
         // if currentCommit is null, it is ok, we don't need to do anything
         // then we move down to check the next condition.
         if (currentCommit != null) {
-            for (String currCommitBlobSha1 : currentCommit.blobSha1List) {
+            for (String currCommitBlobSha1 : currentCommit.getBlobSha1List()) {
                 File currCommitBlobFile = getBlobFile(currCommitBlobSha1);
                 if (currCommitBlobFile.getName().equals(filename)) {
                     findFileInCurrentCommit = true;
@@ -348,7 +348,7 @@ public class Repository {
                                  new SimpleDateFormat("E MMM dd hh:mm:ss yyyy Z");
             String formattedDateString = formatter.format(date);
 
-            Since gitlet document say I should use java.util.formatter,
+            Since gitlet spec say I should use java.util.formatter,
             I didn't use SimpleDateFormat.
             if your Operating System's language is not English,
             it might have problem to display weekday and month,
@@ -400,7 +400,7 @@ public class Repository {
     public static void checkoutFilename(String filename) {
         boolean findThisFileInCurrentCommit = false;
         Commit commit = getCommitBySha1(getHeadCommitSha1());
-        for (String blobSha1 : commit.blobSha1List) {
+        for (String blobSha1 : commit.getBlobSha1List()) {
             // recall that blob are stored like: .gitlet/blobs/40 bit sha1 value/hello.txt
             File blobFile = getBlobFile(blobSha1);
             if (blobFile.getName().equals(filename)) {
@@ -434,7 +434,7 @@ public class Repository {
         }
 
         boolean findThisFileInCurrentCommit = false;
-        for (String blobSha1 : commit.blobSha1List) {
+        for (String blobSha1 : commit.getBlobSha1List()) {
             // recall that blob are stored like: .gitlet/blobs/40 bit sha1 value/hello.txt
             File blobFile = getBlobFile(blobSha1);
             if (blobFile.getName().equals(filename)) {
@@ -533,7 +533,7 @@ public class Repository {
 
         String targetBranchSha1 = readContentsAsString(targetBranchFile);
         Commit commit = getCommitBySha1(targetBranchSha1);
-        for (String blobSha1 : commit.blobSha1List) {
+        for (String blobSha1 : commit.getBlobSha1List()) {
             File file = getBlobFile(blobSha1);
             Path src = file.toPath();
             Path dest = join(CWD, file.getName()).toPath();
@@ -602,7 +602,7 @@ public class Repository {
         List<String> list = new ArrayList<>();
         Commit currentCommit = getCommitBySha1(getHeadCommitSha1());
 
-        for (String blobSha1 : currentCommit.blobSha1List) {
+        for (String blobSha1 : currentCommit.getBlobSha1List()) {
             File blobFile = getBlobFile(blobSha1);
             File CWDFileTrackedInCurrentCommit = join(CWD, blobFile.getName());
             // if a file in CWD is tracked in the current commit
@@ -635,7 +635,7 @@ public class Repository {
 
         // there is a file tracked in current commit, but it disappears in CWD,
         // and it is not in stageForRemoveDir
-        for (String blobSha1 : currentCommit.blobSha1List) {
+        for (String blobSha1 : currentCommit.getBlobSha1List()) {
             File blobFile = getBlobFile(blobSha1);
             if (!join(CWD, blobFile.getName()).exists() &&
                     !join(GITLET_STAGE_FOR_REMOVE, blobFile.getName()).exists()) {
@@ -666,9 +666,9 @@ public class Repository {
         for (File CWDFile : CWD.listFiles()) {
             String CWDFileSha1 = sha1(readContents(CWDFile));
             // if a working file is untracked in the current branch
-            if (!currentCommit.blobSha1List.contains(CWDFileSha1)) {
+            if (!currentCommit.getBlobSha1List().contains(CWDFileSha1)) {
                 // and would be overwritten by the reset
-                if (targetCommit.blobSha1List.contains(CWDFileSha1)) {
+                if (targetCommit.getBlobSha1List().contains(CWDFileSha1)) {
                     System.out.println("There is an untracked file in the way; delete it, or add and commit it first.");
                     System.exit(0);
                 }
@@ -679,14 +679,14 @@ public class Repository {
             String CWDFileSha1 = sha1(readContents(CWDFile));
             // if a CWDFile is tracked in currentCommit,
             // but not in targetCommit, then we remove it
-            if (currentCommit.blobSha1List.contains(CWDFileSha1)
-                    && !targetCommit.blobSha1List.contains(CWDFileSha1)) {
+            if (currentCommit.getBlobSha1List().contains(CWDFileSha1)
+                    && !targetCommit.getBlobSha1List().contains(CWDFileSha1)) {
                 CWDFile.delete();
             }
         }
 
         // check out all the files in the targetCommit
-        for (String blobSha1 : targetCommit.blobSha1List) {
+        for (String blobSha1 : targetCommit.getBlobSha1List()) {
             File blobFile = getBlobFile(blobSha1);
             Path src = blobFile.toPath();
             Path dest = join(CWD, blobFile.getName()).toPath();
@@ -710,7 +710,12 @@ public class Repository {
         // it doesn't point to another branch, so we don't need to modify ACTIVE_BRANCH
     }
 
+    // two parents? use linkedlist to store additional parent
+    // find the latestAncestor? there is a leetcode problem similar to that
+
     public static void merge(String branchName) {
+        //todo: failure cases
+
 
     }
 }
