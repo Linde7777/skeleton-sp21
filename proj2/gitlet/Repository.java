@@ -637,6 +637,7 @@ public class Repository {
             File file = getBlobFile(blobSha1);
             list.add(file);
         }
+        Collections.sort(list);
         return list;
     }
 
