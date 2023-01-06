@@ -550,7 +550,7 @@ public class Repository {
         List<String> filenamesInTargetCommit = getFilenamesInCommit(commitAtTargetBranch);
         for (String filenameInCurrCommit : filenamesInCurrCommit) {
             if (!filenamesInTargetCommit.contains(filenameInCurrCommit)) {
-                join(CWD,filenameInCurrCommit).delete();
+                join(CWD, filenameInCurrCommit).delete();
             }
         }
 
@@ -769,17 +769,29 @@ public class Repository {
      * if we gonna switch to a certain commit, and that commit will overwrite
      * a file which is untracked by current commit, we will exit the entire program
      */
-    private static void checkIfCWDFileWillBeOverwrittenByCommit(Commit commit) {
+    private static void checkIfCWDFileWillBeOverwrittenByCommit(Commit targetCommit) {
+        List<String> filenamesInTargetCommit = getFilenamesInCommit(targetCommit);
+        Commit currentCommit = getCommitBySha1(getHeadCommitSha1());
+        List<String> filenamesInCurrCommit = getFilenamesInCommit(currentCommit);
+
         for (File CWDFile : CWD.listFiles()) {
-            // todo: if CWDFile.getname().equal ".gitlet"
-            for (String blobSha1 : commit.getBlobSha1List()) {
-                File blobFile = join(GITLET_BLOBS_DIR, blobSha1);
-                if (blobFile.getName().equals(CWDFile.getName())) {
-                    System.out.println("There is an untracked file in the way; delete it, or add and commit it first.");
-                    System.exit(0);
-                }
+            if (CWDFile.getName().equals(".gitlet")) {
+                continue;
+            }
+            boolean condition1 = !filenamesInCurrCommit.contains(CWDFile.getName());
+            boolean condition2 = filenamesInTargetCommit.contains(CWDFile.getName());
+            // if a CWDFile is untracked by current commit
+            // and the target commit will overwrite the CWDFile
+            if (condition1 && condition2) {
+                System.out.println("There is an untracked file in the way; delete it, or add and commit it first.");
+                System.exit(0);
             }
         }
+
+
+        //TODO: in the comment, it says mention "current commit",
+        // but the code doesn't have currentCommit
+
     }
 
     public static void merge(String targetBranchName) {
