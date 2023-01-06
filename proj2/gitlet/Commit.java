@@ -78,8 +78,11 @@ public class Commit implements Serializable {
 
     public void modifyCommit(String message, String parentSha1) {
         this.message = message;
-        this.parentSha1List.add(parentSha1);
         this.timeStamp = new Date();
+        // this.parentSha1List is copied from its parent,
+        // it needs to be flushed
+        this.parentSha1List = new LinkedList<>();
+        this.parentSha1List.add(parentSha1);
     }
 
     /**
@@ -156,4 +159,5 @@ public class Commit implements Serializable {
             this.blobSha1List.remove(fileInStagedDirSha1);
         }
     }
+
 }
