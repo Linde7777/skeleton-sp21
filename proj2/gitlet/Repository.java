@@ -345,7 +345,7 @@ public class Repository {
 
             // in log(), if a commit have multiple parents,
             // we only print the first parent
-            if (!currentCommit.getBlobSha1List().isEmpty()) {
+            if (!currentCommit.getParentSha1List().isEmpty()) {
                 currentCommitSha1 = currentCommit.getParentSha1List().get(0);
             } else {
                 currentCommitSha1 = null;
