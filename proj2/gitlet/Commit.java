@@ -50,13 +50,14 @@ public class Commit implements Serializable {
         return blobSha1List;
     }
 
-    /**
-     * The sha1 value of the parent of this Commit.
-     */
-    private String parentSha1;
 
-    public String getParentSha1() {
-        return parentSha1;
+    /**
+     * where store the sha1 values of parents of this commit
+     */
+    private LinkedList<String> parentSha1List;
+
+    public LinkedList<String> getParentSha1List() {
+        return parentSha1List;
     }
 
     /**
@@ -67,19 +68,18 @@ public class Commit implements Serializable {
      * Thu Jan 01 00:00:00 CST 1970
      * <p>
      *
-     * @param message    The message of the commit
+     * @param message The message of the commit
      */
     public Commit(String message) {
         this.timeStamp = new Date(0);
         this.message = message;
-        this.parentSha1 = null;
         this.blobSha1List = new LinkedList<>();
-
+        this.parentSha1List = new LinkedList<>();
     }
 
     public void modifyCommit(String message, String parentSha1) {
         this.message = message;
-        this.parentSha1 = parentSha1;
+        this.parentSha1List.add(parentSha1);
         this.timeStamp = new Date();
     }
 

@@ -334,7 +334,9 @@ public class Repository {
             System.out.println(currentCommit.getMessage());
             System.out.println();
 
-            currentCommitSha1 = currentCommit.getParentSha1();
+            // in log(), if a commit have multiple parents,
+            // we only print the first parent
+            currentCommitSha1 = currentCommit.getParentSha1List().get(0);
         }
 
     }
@@ -712,6 +714,7 @@ public class Repository {
 
     // two parents? use linkedlist to store additional parent
     // find the latestAncestor? there is a leetcode problem similar to that
+    
 
     public static void merge(String branchName) {
         //todo: failure cases
