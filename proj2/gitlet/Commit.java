@@ -117,10 +117,12 @@ public class Commit implements Serializable {
             }
 
             // if in the previous commit, there is hello.txt (version 1),
-            // and in the current commit, we are going to add hello.txt (version 2),
+            // and we are going to add hello.txt (version 2) to the current commit,
             // we need to delete the reference of version 1
             // (we can't delete the file of version 1, because other commit may refer it)
             for (String blobSha1 : blobSha1List) {
+                //TODO: it is similiar to the getBlobFile() in Repository
+                // can we optimize it?
                 File blobDir = join(blobsDir, blobSha1);
                 File blobFile = getTheOnlyFileInDir(blobDir);
                 if (blobFile.getName().equals(stagedFile.getName())) {
@@ -136,9 +138,8 @@ public class Commit implements Serializable {
     private void addFileInDir(File dir, File file) throws IOException {
         if (!dir.exists()) {
             dir.mkdir();
-        } else {
-            throw new GitletException("sha1 value conflict");
         }
+
         Path src = file.toPath();
         Path dest = join(dir, file.getName()).toPath();
         Files.copy(src, dest, StandardCopyOption.REPLACE_EXISTING);
