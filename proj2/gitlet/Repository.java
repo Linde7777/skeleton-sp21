@@ -569,7 +569,8 @@ public class Repository {
         System.out.println("=== Branches ===");
         System.out.println("*" + theNameOfTheActiveBranch);
         for (String filename : Objects.requireNonNull(plainFilenamesIn(GITLET_BRANCHES_DIR))) {
-            if (filename.equals(theNameOfTheActiveBranch)) {
+            if (filename.equals(theNameOfTheActiveBranch) ||
+                    filename.equals("HEAD") || filename.equals("activeBranch")) {
                 continue;
             }
             System.out.println(filename);
@@ -598,7 +599,7 @@ public class Repository {
         System.out.println("=== Untracked Files ===");
         for (File CWDFile : CWD.listFiles()) {
             if (!join(GITLET_STAGE_FOR_ADD_DIR, CWDFile.getName()).exists()) {
-                if(CWDFile.getName().equals(".gitlet")){
+                if (CWDFile.getName().equals(".gitlet")) {
                     continue;
                 }
                 System.out.println(CWDFile.getName());
