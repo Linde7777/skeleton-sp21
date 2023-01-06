@@ -5,7 +5,6 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
-import java.text.SimpleDateFormat;
 import java.util.*;
 
 import static gitlet.Utils.*;
@@ -42,7 +41,7 @@ public class Repository {
     /**
      * The .gitlet/stageForRemove directory, where store the files readied for remove
      */
-    public static final File GITLET_STAGE_FOR_REMOVE = join(GITLET_DIR, "stageForRemove");
+    public static final File GITLET_STAGE_FOR_REMOVE_DIR = join(GITLET_DIR, "stageForRemove");
 
     /**
      * The .gitlet/blobs directory, where store the files of different version
@@ -94,7 +93,7 @@ public class Repository {
             System.exit(0);
         }
         GITLET_STAGE_FOR_ADD_DIR.mkdir();
-        GITLET_STAGE_FOR_REMOVE.mkdir();
+        GITLET_STAGE_FOR_REMOVE_DIR.mkdir();
         GITLET_BLOBS_DIR.mkdir();
         GITLET_COMMITS_DIR.mkdir();
         GITLET_BRANCHES_DIR.mkdir();
@@ -201,7 +200,7 @@ public class Repository {
         commit.modifyCommit(message, parentSha1);
         try {
             commit.addBlobs(GITLET_STAGE_FOR_ADD_DIR, GITLET_BLOBS_DIR);
-            commit.removeBlobs(GITLET_STAGE_FOR_REMOVE);
+            commit.removeBlobs(GITLET_STAGE_FOR_REMOVE_DIR);
 
             String commitSha1 = serializeCommit(commit);
             setupBranch(commitSha1);
@@ -210,12 +209,12 @@ public class Repository {
         }
 
         deleteAllFilesInDir(GITLET_STAGE_FOR_ADD_DIR);
-        deleteAllFilesInDir(GITLET_STAGE_FOR_REMOVE);
+        deleteAllFilesInDir(GITLET_STAGE_FOR_REMOVE_DIR);
     }
 
     private static void checkCommitFailureCases() {
         if (Objects.requireNonNull(GITLET_STAGE_FOR_ADD_DIR.list()).length == 0
-                && Objects.requireNonNull(GITLET_STAGE_FOR_REMOVE.list()).length == 0) {
+                && Objects.requireNonNull(GITLET_STAGE_FOR_REMOVE_DIR.list()).length == 0) {
             System.out.println("No changes added to the commit.");
             System.exit(0);
         }
@@ -302,7 +301,7 @@ public class Repository {
                 if (currCommitBlobFile.getName().equals(filename)) {
                     findFileInCurrentCommit = true;
                     Path src = currCommitBlobFile.toPath();
-                    Path dest = join(GITLET_STAGE_FOR_REMOVE, filename).toPath();
+                    Path dest = join(GITLET_STAGE_FOR_REMOVE_DIR, filename).toPath();
                     try {
                         Files.copy(src, dest, StandardCopyOption.REPLACE_EXISTING);
                     } catch (IOException excp) {
@@ -583,7 +582,7 @@ public class Repository {
         System.out.println();
 
         System.out.println("=== Removed Files ===");
-        for (String filename : Objects.requireNonNull(plainFilenamesIn(GITLET_STAGE_FOR_REMOVE))) {
+        for (String filename : Objects.requireNonNull(plainFilenamesIn(GITLET_STAGE_FOR_REMOVE_DIR))) {
             System.out.println(filename);
         }
         System.out.println();
@@ -604,9 +603,12 @@ public class Repository {
         List<String> filenamesInCommit = getFilenamesInCommit(currentCommit);
         System.out.println("=== Untracked Files ===");
         for (File CWDFile : CWD.listFiles()) {
-            if (!filenamesInCommit.contains(CWDFile.getName())
-                    && (!join(GITLET_STAGE_FOR_ADD_DIR, CWDFile.getName()).exists()
-                    || !join(GITLET_STAGE_FOR_REMOVE, CWDFile.getName()).exists())) {
+            // if a file is present in the CWD but neither stagedForAddDir nor tracked
+            boolean condition1 = !filenamesInCommit.contains(CWDFile.getName())
+                    && !join(GITLET_STAGE_FOR_ADD_DIR, CWDFile.getName()).exists();
+            // if there is a file both exist in CWD and stagedForRemoveDir
+            boolean condition2 = join(GITLET_STAGE_FOR_REMOVE_DIR, CWDFile.getName()).exists();
+            if (condition1 || condition2) {
                 System.out.println(CWDFile.getName());
             }
         }
@@ -655,7 +657,7 @@ public class Repository {
                 if (!sha1(readContentsAsString(CWDFileTrackedInCurrentCommit)).equals(blobSha1)) {
                     // but it is not staged
                     if (!join(GITLET_STAGE_FOR_ADD_DIR, blobFile.getName()).exists()
-                            || !join(GITLET_STAGE_FOR_REMOVE, blobFile.getName()).exists()) {
+                            || !join(GITLET_STAGE_FOR_REMOVE_DIR, blobFile.getName()).exists()) {
                         list.add(blobFile.getName());
                     }
                 }
@@ -682,7 +684,7 @@ public class Repository {
         for (String blobSha1 : currentCommit.getBlobSha1List()) {
             File blobFile = getBlobFile(blobSha1);
             if (!join(CWD, blobFile.getName()).exists() &&
-                    !join(GITLET_STAGE_FOR_REMOVE, blobFile.getName()).exists()) {
+                    !join(GITLET_STAGE_FOR_REMOVE_DIR, blobFile.getName()).exists()) {
                 list.add(blobFile.getName());
             }
         }
@@ -786,7 +788,7 @@ public class Repository {
 
     private static void checkMergeFailureCases(String targetBranchName) {
         if (GITLET_STAGE_FOR_ADD_DIR.list().length != 0
-                || GITLET_STAGE_FOR_REMOVE.list().length != 0) {
+                || GITLET_STAGE_FOR_REMOVE_DIR.list().length != 0) {
             System.out.println("You have uncommitted changes.");
             System.exit(0);
         }
