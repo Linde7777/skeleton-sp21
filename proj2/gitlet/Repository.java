@@ -609,6 +609,10 @@ public class Repository {
             // if there is a file both exist in CWD and stagedForRemoveDir
             boolean condition2 = join(GITLET_STAGE_FOR_REMOVE_DIR, CWDFile.getName()).exists();
             if (condition1 || condition2) {
+                // TODO: I don't know why .gitlet is not hidden and it will be viewed as a file
+                if (CWDFile.getName().equals(".gitlet")) {
+                    continue;
+                }
                 System.out.println(CWDFile.getName());
             }
         }
