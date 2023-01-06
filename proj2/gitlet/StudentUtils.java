@@ -37,8 +37,16 @@ public class StudentUtils {
     }
 
     /**
-     * we have already designed that in certain directory,
-     * there is only one file, we call this function to get that file
+     * we have already designed that the file will be put into
+     * .gitlet/blobs/[sha1 of the file] directory
+     * that is, the file/files in that directory, they all have the same content.
+     * All we want is just content(after I have finished the following todo)
+     *
+     * // TODO: test30 bug here, f.txt and g.txt have the same content
+     * //TODO: in Commit.java, there should hashmap storing the mapping of filename and fileBlobs(sha1)
+     * //then we don't need to store blob in .gitlet/blobs/[sha1], we just name the blobs by its sha1
+     *
+     *
      *
      * @param dir the directory
      * @return the only file in the directory
@@ -46,11 +54,7 @@ public class StudentUtils {
     public static File getTheOnlyFileInDir(File dir) {
         if (dir.isDirectory()) {
             File[] files = dir.listFiles();
-            if (files.length != 1) {
-                throw new GitletException("This directory has more than one file");
-            } else {
                 return files[0];
-            }
         } else {
             throw new GitletException("This is not a directory");
         }
