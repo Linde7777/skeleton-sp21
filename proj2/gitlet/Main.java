@@ -80,37 +80,37 @@ public class Main {
                 Repository.log();
                 break;
             case "checkout":
-                if (args[1].equals("--")) {
-                    checkFuncArgumentLength(args, 3);
+                if (args.length == 3 && args[1].equals("--")) {
                     String filename = args[2];
                     Repository.checkoutFilename(filename);
-                } else if (args[2].equals("--")) {
-                    checkFuncArgumentLength(args, 4);
+                } else if (args.length == 4 && args[2].equals("--")) {
                     String commitId = args[1];
                     String filename = args[3];
                     Repository.checkoutCommitAndFilename(commitId, filename);
-                } else {
-                    checkFuncArgumentLength(args, 2);
+                } else if (args.length == 2) {
                     String branchName = args[1];
                     Repository.checkoutBranchName(branchName);
+                } else {
+                    System.out.println("Incorrect operands.");
+                    System.exit(0);
                 }
                 break;
             case "branch":
-                checkFuncArgumentLength(args,2);
+                checkFuncArgumentLength(args, 2);
                 String branchToBeCreatedName = args[1];
                 Repository.branch(branchToBeCreatedName);
                 break;
             case "rm-branch":
-                checkFuncArgumentLength(args,2);
+                checkFuncArgumentLength(args, 2);
                 String branchToBeRemovedName = args[1];
                 Repository.removeBranch(branchToBeRemovedName);
                 break;
             case "status":
-                checkFuncArgumentLength(args,1);
+                checkFuncArgumentLength(args, 1);
                 Repository.status();
                 break;
             case "reset":
-                checkFuncArgumentLength(args,2);
+                checkFuncArgumentLength(args, 2);
                 String commitId = args[1];
                 Repository.reset(commitId);
                 break;
