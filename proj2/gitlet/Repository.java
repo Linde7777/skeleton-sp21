@@ -210,7 +210,7 @@ public class Repository {
         deleteAllFilesInDir(GITLET_STAGE_FOR_REMOVE);
     }
 
-    private static void checkCommitFailureCases(){
+    private static void checkCommitFailureCases() {
         if (Objects.requireNonNull(GITLET_STAGE_FOR_ADD_DIR.list()).length == 0
                 && Objects.requireNonNull(GITLET_STAGE_FOR_REMOVE.list()).length == 0) {
             System.out.println("No changes added to the commit.");
@@ -531,8 +531,14 @@ public class Repository {
             System.exit(0);
         }
 
+        Commit currentCommit = getCommitBySha1(getHeadCommitSha1());
         for (File CWDFile : CWD.listFiles()) {
-            if (!join(GITLET_STAGE_FOR_ADD_DIR, CWDFile.getName()).exists()) {
+            String CWDFileSha1 = sha1(readContents(CWDFile));
+            // if a CWDFile untracked by current commit
+            if (!currentCommit.getBlobSha1List().contains(CWDFileSha1)) {
+                // and it will be overwritten by checkout
+                //TODO: here is a bug, go to check the reset()
+                // which also need to print the following message
                 System.out.println("There is an untracked file in the way; delete it, or add and commit it first.");
                 System.exit(0);
             }
@@ -681,6 +687,8 @@ public class Repository {
             // if a working file is untracked in the current branch
             if (!currentCommit.getBlobSha1List().contains(CWDFileSha1)) {
                 // and would be overwritten by the reset
+                //TODO: here is a bug, I should check filename instead of sha1
+                // and try to seal it in a function
                 if (targetCommit.getBlobSha1List().contains(CWDFileSha1)) {
                     System.out.println("There is an untracked file in the way; delete it, or add and commit it first.");
                     System.exit(0);
@@ -726,15 +734,38 @@ public class Repository {
     // two parents? use linkedlist to store additional parent
     // find the latestAncestor? there is a leetcode problem similar to that
 
-    private static Commit getLatestCommonAncestor(){
+    private static Commit getLatestCommonAncestor() {
 
         return null;
     }
 
+    private static void checkMergeFailureCases(String branchName) {
+        if (GITLET_STAGE_FOR_ADD_DIR.list().length != 0
+                || GITLET_STAGE_FOR_REMOVE.list().length != 0) {
+            System.out.println("You have uncommitted changes.");
+            System.exit(0);
+        }
+
+        File branchFile = join(GITLET_BRANCHES_DIR, branchName);
+        if (!branchFile.exists()) {
+            System.out.println("A branch with that name does not exist.");
+            System.exit(0);
+        }
+
+        String theNameOfActiveBranch = readContentsAsString(GITLET_ACTIVE_BRANCH_FILE);
+        if (branchName.equals(theNameOfActiveBranch)) {
+            System.out.println("Cannot merge a branch with itself.");
+            System.exit(0);
+        }
+
+        checkCommitFailureCases();
+    }
+
     public static void merge(String branchName) {
         //todo: failure cases
-
-
+        checkMergeFailureCases(branchName);
 
     }
+
+
 }
