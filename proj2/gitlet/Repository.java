@@ -7,11 +7,9 @@ import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.*;
 
-import static gitlet.StudentUtils.*;
 import static gitlet.Utils.*;
 
-// TODO: any imports you need here
-
+import static gitlet.StudentUtils.*;
 /**
  * Represents a gitlet repository.
  *  TODO: It's a good idea to give a description here of what else this Class
@@ -598,7 +596,7 @@ public class Repository {
 
     /**
      * Copied from gitlet spec:
-     * A file in the working directory is “modified but not staged” if it is:
+     * A file in the working directory is "modified but not staged" if it is:
      * Tracked in the current commit, changed in the working directory, but not staged; or
      * Staged for addition, but with different contents than in the working directory; or
      * Staged for addition, but deleted in the working directory; or
@@ -726,14 +724,6 @@ public class Repository {
     }
 
 
-    // two parents? use linkedlist to store additional parent
-    // find the latestAncestor? there is a leetcode problem similar to that
-
-    private static Commit getLatestCommonAncestor() {
-
-        return null;
-    }
-
     private static void checkMergeFailureCases(String targetBranchName) {
         if (GITLET_STAGE_FOR_ADD_DIR.list().length != 0
                 || GITLET_STAGE_FOR_REMOVE.list().length != 0) {
@@ -755,12 +745,55 @@ public class Repository {
 
         checkCommitFailureCases();
 
-        Commit commitAtTargetBranch = getCommitBySha1(readContentsAsString(targetBranchFile));
+        Commit commitAtTargetBranch = getCommitAtTargetBranch(targetBranchName);
         checkIfCWDFileWillBeOverwrittenByCommit(commitAtTargetBranch);
+
+    }
+
+    private static Commit getCommitAtTargetBranch(String targetBranchName) {
+        File targetBranchFile = join(GITLET_BRANCHES_DIR, targetBranchName);
+        return getCommitBySha1(readContentsAsString(targetBranchFile));
+    }
+
+
+    // there is a leetcode problem similar to that
+
+    /**
+     * This is similiar to find the latest common ancestor of two linked-list
+     *
+     * @param commit1
+     * @param commit2
+     * @return
+     */
+    private static Commit getCommitAtSplitPoint(Commit commit1, Commit commit2) {
+        Commit p1 = commit1;
+        Commit p2 = commit2;
+        while (p1 != p2) {
+            p1 = (p1 != null ? getTheFirstParentCommit(p1) : commit2);
+            p2 = (p2 != null ? getTheFirstParentCommit(p2) : commit1);
+        }
+        String firstParentSha1 = p1.getParentSha1List().get(0);
+        Commit firstParentCommit = getCommitBySha1(firstParentSha1);
+        return p1;
+    }
+
+    /**
+     * commit can have more than one parent,
+     * this function will return the first parent
+     *
+     * @param commit
+     * @return
+     */
+    private static Commit getTheFirstParentCommit(Commit commit) {
+        String firstParentSha1 = commit.getParentSha1List().get(0);
+        return getCommitBySha1(firstParentSha1);
     }
 
     public static void merge(String targetBranchName) {
         checkMergeFailureCases(targetBranchName);
+        Commit commitAtTargetBranch = getCommitAtTargetBranch(targetBranchName);
+        Commit commitAtHEAD = getCommitBySha1(getHeadCommitSha1());
+        Commit commitAtSplitPoint = getCommitAtSplitPoint(commitAtTargetBranch, commitAtHEAD);
 
     }
 
