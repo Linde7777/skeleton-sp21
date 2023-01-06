@@ -587,10 +587,10 @@ public class Repository {
         }
         System.out.println();
 
-        List<String> list = getModifiedButNotStagedFilesInCWD();
+        TreeMap<String, String> list = getModifiedButNotStagedFilesInCWD();
         System.out.println("=== Modifications Not Staged For Commit ===");
-        for (String filename : list) {
-            System.out.println(filename);
+        for (String filename : list.keySet()) {
+            System.out.println(filename + "(" + list.get(filename) + ")");
         }
         System.out.println();
 
@@ -646,10 +646,12 @@ public class Repository {
      * Staged for addition, but deleted in the working directory; or
      * Not staged for removal, but tracked in the current commit and deleted from the working directory.
      *
-     * @return the names of the files
+     * @return the names of the files and the states of the files
      */
-    private static List<String> getModifiedButNotStagedFilesInCWD() {
-        List<String> list = new ArrayList<>();
+    private static TreeMap<String, String> getModifiedButNotStagedFilesInCWD() {
+
+        TreeMap<String, String> list = new TreeMap<>();
+        //List<String> list = new ArrayList<>();
         Commit currentCommit = getCommitBySha1(getHeadCommitSha1());
 
         for (String blobSha1 : currentCommit.getBlobSha1List()) {
@@ -662,7 +664,7 @@ public class Repository {
                     // but it is not staged
                     if (!join(GITLET_STAGE_FOR_ADD_DIR, blobFile.getName()).exists()
                             || !join(GITLET_STAGE_FOR_REMOVE_DIR, blobFile.getName()).exists()) {
-                        list.add(blobFile.getName());
+                        list.put(blobFile.getName(), "modified");
                     }
                 }
             }
@@ -674,12 +676,12 @@ public class Repository {
                 // but with different contents than in the working directory
                 if (!sha1(readContentsAsString(file)).equals(
                         sha1(readContentsAsString(join(CWD, file.getName()))))) {
-                    list.add(file.getName());
+                    list.put(file.getName(), "modified");
                 }
             } else {
                 // if the "file in stagedForAddDir" is deleted
                 // in the working directory
-                list.add(file.getName());
+                list.put(file.getName(), "deleted");
             }
         }
 
@@ -689,10 +691,10 @@ public class Repository {
             File blobFile = getBlobFile(blobSha1);
             if (!join(CWD, blobFile.getName()).exists() &&
                     !join(GITLET_STAGE_FOR_REMOVE_DIR, blobFile.getName()).exists()) {
-                list.add(blobFile.getName());
+                list.put(blobFile.getName(), "deleted");
             }
         }
-        Collections.sort(list);
+        //Collections.sort(list);
         return list;
     }
 
