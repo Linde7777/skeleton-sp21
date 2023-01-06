@@ -587,10 +587,11 @@ public class Repository {
         }
         System.out.println();
 
-        TreeMap<String, String> list = getModifiedButNotStagedFilesInCWD();
+        // TreeMap is sorted
+        TreeMap<String, String> map = getModifiedButNotStagedFilesInCWD();
         System.out.println("=== Modifications Not Staged For Commit ===");
-        for (String filename : list.keySet()) {
-            System.out.println(filename + "(" + list.get(filename) + ")");
+        for (String filename : map.keySet()) {
+            System.out.println(filename + "(" + map.get(filename) + ")");
         }
         System.out.println();
 
@@ -650,7 +651,7 @@ public class Repository {
      */
     private static TreeMap<String, String> getModifiedButNotStagedFilesInCWD() {
 
-        TreeMap<String, String> list = new TreeMap<>();
+        TreeMap<String, String> map = new TreeMap<>();
         //List<String> list = new ArrayList<>();
         Commit currentCommit = getCommitBySha1(getHeadCommitSha1());
 
@@ -664,7 +665,7 @@ public class Repository {
                     // but it is not staged
                     if (!join(GITLET_STAGE_FOR_ADD_DIR, blobFile.getName()).exists()
                             || !join(GITLET_STAGE_FOR_REMOVE_DIR, blobFile.getName()).exists()) {
-                        list.put(blobFile.getName(), "modified");
+                        map.put(blobFile.getName(), "modified");
                     }
                 }
             }
@@ -676,12 +677,12 @@ public class Repository {
                 // but with different contents than in the working directory
                 if (!sha1(readContentsAsString(file)).equals(
                         sha1(readContentsAsString(join(CWD, file.getName()))))) {
-                    list.put(file.getName(), "modified");
+                    map.put(file.getName(), "modified");
                 }
             } else {
                 // if the "file in stagedForAddDir" is deleted
                 // in the working directory
-                list.put(file.getName(), "deleted");
+                map.put(file.getName(), "deleted");
             }
         }
 
@@ -691,11 +692,11 @@ public class Repository {
             File blobFile = getBlobFile(blobSha1);
             if (!join(CWD, blobFile.getName()).exists() &&
                     !join(GITLET_STAGE_FOR_REMOVE_DIR, blobFile.getName()).exists()) {
-                list.put(blobFile.getName(), "deleted");
+                map.put(blobFile.getName(), "deleted");
             }
         }
         //Collections.sort(list);
-        return list;
+        return map;
     }
 
     /**
