@@ -192,13 +192,7 @@ public class Repository {
      * @param parentSha1 the sha1 value of the parent commit
      */
     private static void setUpCommit(String message, String parentSha1) {
-        checkInitialize();
-        if (Objects.requireNonNull(GITLET_STAGE_FOR_ADD_DIR.list()).length == 0
-                && Objects.requireNonNull(GITLET_STAGE_FOR_REMOVE.list()).length == 0) {
-            System.out.println("No changes added to the commit.");
-            System.exit(0);
-        }
-
+        checkCommitFailureCases();
         Commit commit = getCommitBySha1(getHeadCommitSha1());
         assert commit != null;
         commit.modifyCommit(message, parentSha1);
@@ -214,6 +208,14 @@ public class Repository {
 
         deleteAllFilesInDir(GITLET_STAGE_FOR_ADD_DIR);
         deleteAllFilesInDir(GITLET_STAGE_FOR_REMOVE);
+    }
+
+    private static void checkCommitFailureCases(){
+        if (Objects.requireNonNull(GITLET_STAGE_FOR_ADD_DIR.list()).length == 0
+                && Objects.requireNonNull(GITLET_STAGE_FOR_REMOVE.list()).length == 0) {
+            System.out.println("No changes added to the commit.");
+            System.exit(0);
+        }
     }
 
     private static File getBlobFile(String blobSha1) {
