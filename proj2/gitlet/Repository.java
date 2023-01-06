@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
+import java.text.SimpleDateFormat;
 import java.util.*;
 
 import static gitlet.Utils.*;
@@ -344,14 +345,22 @@ public class Repository {
 
             // in log(), if a commit have multiple parents,
             // we only print the first parent
-            currentCommitSha1 = currentCommit.getParentSha1List().get(0);
+            if (!currentCommit.getBlobSha1List().isEmpty()) {
+                currentCommitSha1 = currentCommit.getParentSha1List().get(0);
+            } else {
+                currentCommitSha1 = null;
+            }
         }
 
     }
 
     private static String formatDate(Date date) {
+        SimpleDateFormat formatter =
+                new SimpleDateFormat("E MMM dd hh:mm:ss yyyy Z");
+        return formatter.format(date);
+
         // FYI: https://docs.oracle.com/javase/7/docs/api/java/util/Formatter.html
-        return String.format("%1$ta %1$tb %1$te %1$tH:%1$tM:%1$tS %1$tY %1$tz", date);
+        // return String.format("%1$ta %1$tb %1$te %1$tH:%1$tM:%1$tS %1$tY %1$tz", date);
         /*
             you can also use the following code to get the same output:
             SimpleDateFormat formatter =
@@ -752,7 +761,6 @@ public class Repository {
 
     }
 
-
     private static void checkMergeFailureCases(String targetBranchName) {
         if (GITLET_STAGE_FOR_ADD_DIR.list().length != 0
                 || GITLET_STAGE_FOR_REMOVE.list().length != 0) {
@@ -786,11 +794,7 @@ public class Repository {
 
 
     /**
-     * This is similiar to find the latest common ancestor of two linked-list
-     *
-     * @param commit1
-     * @param commit2
-     * @return
+     * This is similar to find the latest common ancestor of two linked-list
      */
     private static Commit getCommitAtSplitPoint(Commit commit1, Commit commit2) {
         Commit p1 = commit1;
@@ -805,9 +809,6 @@ public class Repository {
     /**
      * commit can have more than one parent,
      * this function will return the first parent
-     *
-     * @param commit
-     * @return
      */
     private static Commit getTheFirstParentOfGivenCommit(Commit commit) {
         String firstParentSha1 = commit.getParentSha1List().get(0);
