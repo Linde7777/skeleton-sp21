@@ -596,7 +596,7 @@ public class Repository {
         System.out.println();
 
 
-        // The final category (“Untracked Files”) is for files present in the
+        // The final category ("Untracked Files") is for files present in the
         // working directory but neither staged for addition nor tracked.
         // This includes files that have been staged for removal,
         // but then re-created without Gitlet’s knowledge.
