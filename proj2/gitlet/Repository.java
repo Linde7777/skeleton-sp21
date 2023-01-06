@@ -542,11 +542,15 @@ public class Repository {
         Commit commitAtTargetBranch = getCommitBySha1(commitAtTargetBranchSha1);
         checkIfCWDFileWillBeOverwrittenByCommit(commitAtTargetBranch);
 
-        //TODO: Any files that are tracked in the current branch
+        // Any files that are tracked in the current branch
         // but are not present in the checked-out branch are deleted.
-        // needed to be modify?
-        for (File CWDFile : Objects.requireNonNull(CWD.listFiles())) {
-            restrictedDelete(CWDFile);
+        Commit commitAtCurrentBranch = getCommitBySha1(getHeadCommitSha1());
+        List<String> filenamesInCurrCommit = getFilenamesInCommit(commitAtCurrentBranch);
+        List<String> filenamesInTargetCommit = getFilenamesInCommit(commitAtTargetBranch);
+        for (String filenameInCurrCommit : filenamesInCurrCommit) {
+            if (!filenamesInTargetCommit.contains(filenameInCurrCommit)) {
+                join(CWD,filenameInCurrCommit).delete();
+            }
         }
 
         for (String blobSha1 : commitAtTargetBranch.getBlobSha1List()) {
