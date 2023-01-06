@@ -641,10 +641,11 @@ public class Repository {
 
     private static List<String> getFilenamesInCommit(Commit commit) {
         List<String> list = new ArrayList<>();
-        for (String blobSha1 : commit.getBlobSha1List()) {
-            File file = getBlobFile(blobSha1);
-            list.add(file.getName());
+        List<File> filesInCommit = getFilesInCommit(commit);
+        for (File fileInCommit : filesInCommit) {
+            list.add(fileInCommit.getName());
         }
+
         return list;
     }
 
