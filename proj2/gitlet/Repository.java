@@ -248,6 +248,7 @@ public class Repository {
         Path dest = join(commitDir, commitSha1).toPath();
         try {
             Files.copy(src, dest, StandardCopyOption.REPLACE_EXISTING);
+            commitFile.delete();
         } catch (IOException excp) {
             throw new GitletException(excp.getMessage());
         }
