@@ -355,12 +355,8 @@ public class Repository {
     }
 
     private static String formatDate(Date date) {
-        SimpleDateFormat formatter =
-                new SimpleDateFormat("E MMM dd hh:mm:ss yyyy Z");
-        return formatter.format(date);
-
         // FYI: https://docs.oracle.com/javase/7/docs/api/java/util/Formatter.html
-        // return String.format("%1$ta %1$tb %1$te %1$tH:%1$tM:%1$tS %1$tY %1$tz", date);
+        return String.format("%1$ta %1$tb %1$te %1$tH:%1$tM:%1$tS %1$tY %1$tz", date);
         /*
             you can also use the following code to get the same output:
             SimpleDateFormat formatter =
