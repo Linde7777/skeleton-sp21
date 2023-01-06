@@ -598,6 +598,9 @@ public class Repository {
         System.out.println("=== Untracked Files ===");
         for (File CWDFile : CWD.listFiles()) {
             if (!join(GITLET_STAGE_FOR_ADD_DIR, CWDFile.getName()).exists()) {
+                if(CWDFile.getName().equals(".gitlet")){
+                    continue;
+                }
                 System.out.println(CWDFile.getName());
             }
         }
