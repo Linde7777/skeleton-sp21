@@ -531,18 +531,8 @@ public class Repository {
             System.exit(0);
         }
 
-        Commit currentCommit = getCommitBySha1(getHeadCommitSha1());
-        for (File CWDFile : CWD.listFiles()) {
-            String CWDFileSha1 = sha1(readContents(CWDFile));
-            // if a CWDFile untracked by current commit
-            if (!currentCommit.getBlobSha1List().contains(CWDFileSha1)) {
-                // and it will be overwritten by checkout
-                //TODO: here is a bug, go to check the reset()
-                // which also need to print the following message
-                System.out.println("There is an untracked file in the way; delete it, or add and commit it first.");
-                System.exit(0);
-            }
-        }
+        Commit commitAtTargetBranch = getCommitBySha1(readContentsAsString(targetBranchFile));
+        checkIfCWDFileWillBeOverwrittenByCommit(commitAtTargetBranch);
 
         for (File CWDFile : Objects.requireNonNull(CWD.listFiles())) {
             restrictedDelete(CWDFile);
@@ -681,21 +671,9 @@ public class Repository {
             System.exit(0);
         }
 
-        Commit currentCommit = getCommitBySha1(getHeadCommitSha1());
-        for (File CWDFile : CWD.listFiles()) {
-            String CWDFileSha1 = sha1(readContents(CWDFile));
-            // if a working file is untracked in the current branch
-            if (!currentCommit.getBlobSha1List().contains(CWDFileSha1)) {
-                // and would be overwritten by the reset
-                //TODO: here is a bug, I should check filename instead of sha1
-                // and try to seal it in a function
-                if (targetCommit.getBlobSha1List().contains(CWDFileSha1)) {
-                    System.out.println("There is an untracked file in the way; delete it, or add and commit it first.");
-                    System.exit(0);
-                }
-            }
-        }
+        checkIfCWDFileWillBeOverwrittenByCommit(targetCommit);
 
+        Commit currentCommit = getCommitBySha1(getHeadCommitSha1());
         for (File CWDFile : CWD.listFiles()) {
             String CWDFileSha1 = sha1(readContents(CWDFile));
             // if a CWDFile is tracked in currentCommit,
@@ -730,6 +708,23 @@ public class Repository {
         // now what HEAD doing is to point to a previous commit of a branch,
         // it doesn't point to another branch, so we don't need to modify ACTIVE_BRANCH
     }
+
+    /**
+     * if we gonna switch to a certain commit, and that commit will overwrite
+     * a file which is untracked by current commit, we will exit the entire program
+     */
+    private static void checkIfCWDFileWillBeOverwrittenByCommit(Commit commit) {
+        for (File CWDFile : CWD.listFiles()) {
+            for (String blobSha1 : commit.getBlobSha1List()) {
+                File blobFile = join(GITLET_BLOBS_DIR, blobSha1);
+                if (blobFile.getName().equals(CWDFile.getName())) {
+                    System.out.println("There is an untracked file in the way; delete it, or add and commit it first.");
+                    System.exit(0);
+                }
+            }
+        }
+    }
+
 
     // two parents? use linkedlist to store additional parent
     // find the latestAncestor? there is a leetcode problem similar to that
