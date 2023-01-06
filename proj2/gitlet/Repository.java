@@ -111,7 +111,7 @@ public class Repository {
     }
 
     private static void setUpFirstCommit() {
-        String message = "init commit";
+        String message = "initial commit";
         Commit commit = new Commit(message);
         String commitSha1 = serializeCommit(commit);
         setupBranch(commitSha1);
