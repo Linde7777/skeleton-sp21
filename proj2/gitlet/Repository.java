@@ -158,6 +158,7 @@ public class Repository {
         return sha1;
     }
 
+    //TODO: need to throw execption instead return null?
     private static Commit getCommitBySha1(String commitSha1) {
         if (commitSha1.length() < 40) {
             return null;
