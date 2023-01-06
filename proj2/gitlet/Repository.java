@@ -271,6 +271,7 @@ public class Repository {
      * @param filename the name of the file that we want to remove
      */
     public static void remove(String filename) {
+        checkInitialize();
         boolean findFileInStageForAddDir = false;
         File[] filesInStageForAddDir = GITLET_STAGE_FOR_ADD_DIR.listFiles();
         // if filesInStageForAddDir is null, it is ok, we don't need to do anything,
@@ -320,6 +321,7 @@ public class Repository {
     }
 
     public static void log() {
+        checkInitialize();
         //todo: dealing with merge
 
         String currentCommitSha1 = getHeadCommitSha1();
@@ -361,6 +363,7 @@ public class Repository {
     }
 
     public static void branch(String branchName) {
+        checkInitialize();
         File branchFile = join(GITLET_BRANCHES_DIR, branchName);
         if (!branchFile.exists()) {
             try {
@@ -378,6 +381,7 @@ public class Repository {
     }
 
     public static void removeBranch(String branchName) {
+        checkInitialize();
         if (readContentsAsString(GITLET_ACTIVE_BRANCH_FILE).equals(branchName)) {
             System.out.println("Cannot remove the current branch.");
             System.exit(0);
@@ -400,6 +404,7 @@ public class Repository {
      * The new version of the file is not staged.
      */
     public static void checkoutFilename(String filename) {
+        checkInitialize();
         boolean findThisFileInCurrentCommit = false;
         Commit commit = getCommitBySha1(getHeadCommitSha1());
         for (String blobSha1 : commit.getBlobSha1List()) {
@@ -429,6 +434,7 @@ public class Repository {
      * that’s already there if there is one. The new version of the file is not staged.
      */
     public static void checkoutCommitAndFilename(String commitId, String filename) {
+        checkInitialize();
         Commit commit = getCommitBySha1(getCompletedSha1(commitId));
         if (commit == null) {
             System.out.println("No commit with that id exists.");
@@ -510,6 +516,7 @@ public class Repository {
      * branch is the current branch
      */
     public static void checkoutBranchName(String targetBranchName) {
+        checkInitialize();
         File targetBranchFile = join(GITLET_BRANCHES_DIR, targetBranchName);
         if (!targetBranchFile.exists()) {
             System.out.println("No such branch exists.");
@@ -550,6 +557,7 @@ public class Repository {
     }
 
     public static void status() {
+        checkInitialize();
         String theNameOfTheActiveBranch = readContentsAsString(GITLET_ACTIVE_BRANCH_FILE);
         System.out.println("=== Branches ===");
         System.out.println("*" + theNameOfTheActiveBranch);
@@ -657,6 +665,7 @@ public class Repository {
      * @param commitId commitId can be abbreviated as for checkout
      */
     public static void reset(String commitId) {
+        checkInitialize();
         String targetCommitId = getCompletedSha1(commitId);
         Commit targetCommit = getCommitBySha1(targetCommitId);
         if (targetCommit == null) {
@@ -714,10 +723,15 @@ public class Repository {
 
     // two parents? use linkedlist to store additional parent
     // find the latestAncestor? there is a leetcode problem similar to that
-    
+
+    private static Commit getLatestCommonAncestor(){
+
+        return null;
+    }
 
     public static void merge(String branchName) {
         //todo: failure cases
+
 
 
     }
