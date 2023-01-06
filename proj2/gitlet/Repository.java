@@ -538,16 +538,18 @@ public class Repository {
             System.exit(0);
         }
 
-        Commit commitAtTargetBranch = getCommitBySha1(readContentsAsString(targetBranchFile));
+        String commitAtTargetBranchSha1 = readContentsAsString(targetBranchFile);
+        Commit commitAtTargetBranch = getCommitBySha1(commitAtTargetBranchSha1);
         checkIfCWDFileWillBeOverwrittenByCommit(commitAtTargetBranch);
 
+        //TODO: Any files that are tracked in the current branch
+        // but are not present in the checked-out branch are deleted.
+        // needed to be modify?
         for (File CWDFile : Objects.requireNonNull(CWD.listFiles())) {
             restrictedDelete(CWDFile);
         }
 
-        String targetBranchSha1 = readContentsAsString(targetBranchFile);
-        Commit commit = getCommitBySha1(targetBranchSha1);
-        for (String blobSha1 : commit.getBlobSha1List()) {
+        for (String blobSha1 : commitAtTargetBranch.getBlobSha1List()) {
             File file = getBlobFile(blobSha1);
             Path src = file.toPath();
             Path dest = join(CWD, file.getName()).toPath();
@@ -559,6 +561,9 @@ public class Repository {
         }
 
         writeContents(GITLET_ACTIVE_BRANCH_FILE, targetBranchName);
+        writeContents(HEAD_FILE, commitAtTargetBranchSha1);
+        deleteAllFilesInDir(GITLET_STAGE_FOR_ADD_DIR);
+        deleteAllFilesInDir(GITLET_STAGE_FOR_REMOVE_DIR);
     }
 
     public static void status() {
@@ -760,6 +765,7 @@ public class Repository {
      */
     private static void checkIfCWDFileWillBeOverwrittenByCommit(Commit commit) {
         for (File CWDFile : CWD.listFiles()) {
+            // todo: if CWDFile.getname().equal ".gitlet"
             for (String blobSha1 : commit.getBlobSha1List()) {
                 File blobFile = join(GITLET_BLOBS_DIR, blobSha1);
                 if (blobFile.getName().equals(CWDFile.getName())) {
