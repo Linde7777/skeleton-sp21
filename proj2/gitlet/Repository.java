@@ -734,31 +734,33 @@ public class Repository {
         return null;
     }
 
-    private static void checkMergeFailureCases(String branchName) {
+    private static void checkMergeFailureCases(String targetBranchName) {
         if (GITLET_STAGE_FOR_ADD_DIR.list().length != 0
                 || GITLET_STAGE_FOR_REMOVE.list().length != 0) {
             System.out.println("You have uncommitted changes.");
             System.exit(0);
         }
 
-        File branchFile = join(GITLET_BRANCHES_DIR, branchName);
-        if (!branchFile.exists()) {
+        File targetBranchFile = join(GITLET_BRANCHES_DIR, targetBranchName);
+        if (!targetBranchFile.exists()) {
             System.out.println("A branch with that name does not exist.");
             System.exit(0);
         }
 
         String theNameOfActiveBranch = readContentsAsString(GITLET_ACTIVE_BRANCH_FILE);
-        if (branchName.equals(theNameOfActiveBranch)) {
+        if (targetBranchName.equals(theNameOfActiveBranch)) {
             System.out.println("Cannot merge a branch with itself.");
             System.exit(0);
         }
 
         checkCommitFailureCases();
+
+        Commit commitAtTargetBranch = getCommitBySha1(readContentsAsString(targetBranchFile));
+        checkIfCWDFileWillBeOverwrittenByCommit(commitAtTargetBranch);
     }
 
-    public static void merge(String branchName) {
-        //todo: failure cases
-        checkMergeFailureCases(branchName);
+    public static void merge(String targetBranchName) {
+        checkMergeFailureCases(targetBranchName);
 
     }
 
