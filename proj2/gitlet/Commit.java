@@ -50,7 +50,6 @@ public class Commit implements Serializable {
         return blobSha1List;
     }
 
-
     /**
      * where store the sha1 values of parents of this commit
      */
