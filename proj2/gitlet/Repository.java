@@ -10,6 +10,7 @@ import java.util.*;
 import static gitlet.Utils.*;
 
 import static gitlet.StudentUtils.*;
+
 /**
  * Represents a gitlet repository.
  *  TODO: It's a good idea to give a description here of what else this Class
@@ -728,6 +729,29 @@ public class Repository {
         }
     }
 
+    public static void merge(String targetBranchName) {
+        checkMergeFailureCases(targetBranchName);
+        Commit commitAtTargetBranch = getCommitAtTargetBranch(targetBranchName);
+        Commit commitAtCurrentBranch = getCommitBySha1(getHeadCommitSha1());
+        Commit commitAtSplitPoint = getCommitAtSplitPoint(commitAtTargetBranch, commitAtCurrentBranch);
+
+        if (commitAtSplitPoint == commitAtTargetBranch) {
+            System.out.println("Given branch is an ancestor of the current branch.");
+            System.exit(0);
+        }
+        if (commitAtSplitPoint == commitAtCurrentBranch) {
+            checkoutBranchName(targetBranchName);
+            System.exit(0);
+        }
+
+        // case 1
+        for (String blobSha1 : commitAtTargetBranch.getBlobSha1List()) {
+            File blobFile = getBlobFile(blobSha1);
+
+        }
+
+    }
+
 
     private static void checkMergeFailureCases(String targetBranchName) {
         if (GITLET_STAGE_FOR_ADD_DIR.list().length != 0
@@ -761,8 +785,6 @@ public class Repository {
     }
 
 
-    // there is a leetcode problem similar to that
-
     /**
      * This is similiar to find the latest common ancestor of two linked-list
      *
@@ -774,11 +796,9 @@ public class Repository {
         Commit p1 = commit1;
         Commit p2 = commit2;
         while (p1 != p2) {
-            p1 = (p1 != null ? getTheFirstParentCommit(p1) : commit2);
-            p2 = (p2 != null ? getTheFirstParentCommit(p2) : commit1);
+            p1 = (p1 != null ? getTheFirstParentOfGivenCommit(p1) : commit2);
+            p2 = (p2 != null ? getTheFirstParentOfGivenCommit(p2) : commit1);
         }
-        String firstParentSha1 = p1.getParentSha1List().get(0);
-        Commit firstParentCommit = getCommitBySha1(firstParentSha1);
         return p1;
     }
 
@@ -789,17 +809,9 @@ public class Repository {
      * @param commit
      * @return
      */
-    private static Commit getTheFirstParentCommit(Commit commit) {
+    private static Commit getTheFirstParentOfGivenCommit(Commit commit) {
         String firstParentSha1 = commit.getParentSha1List().get(0);
         return getCommitBySha1(firstParentSha1);
-    }
-
-    public static void merge(String targetBranchName) {
-        checkMergeFailureCases(targetBranchName);
-        Commit commitAtTargetBranch = getCommitAtTargetBranch(targetBranchName);
-        Commit commitAtHEAD = getCommitBySha1(getHeadCommitSha1());
-        Commit commitAtSplitPoint = getCommitAtSplitPoint(commitAtTargetBranch, commitAtHEAD);
-
     }
 
 
