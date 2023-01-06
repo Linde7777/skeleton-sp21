@@ -18,6 +18,10 @@ import static gitlet.StudentUtils.*;
  * @author Linde
  */
 public class Repository {
+    //TODO: what about move commit related function to Commit.java ?
+    // and also let Commit.java have GITLET_BLOBS_DIR and GITLET_COMMITS_DIR
+    // since many commit related function need these two directory
+
     /**
      * The current working directory.
      */
