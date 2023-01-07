@@ -14,7 +14,6 @@ import java.util.Objects;
 import java.util.TreeMap;
 
 import static gitlet.Utils.*;
-import static gitlet.StudentUtils.*;
 
 /**
  * Represents a gitlet commit object.
@@ -87,49 +86,53 @@ public class Commit implements Serializable {
     }
 
     /**
-     * this function will create blobs from the files in stagedForAdd directory,
-     * then put the filename and it's sha1 values into Commit.map
+     * Add files into commit.
+     * <p>
+     * Recall that Repository.add() have make sure that the
+     * files in stagedForAdd is "tracked but be modified" or "untracked".
+     * <p>
+     * this function will put the filename->fileSha1 mapping into this commit.
+     * and copy files from the stagedForAdd directory
+     * to the .gitlet/blobs directory,
      * <p>
      * e.g.
      * hello.txt's sha1 is 7afbac, we call it hello.txt version 1,
-     * when this function is executed, its content will be stored at the .gitlet/blobs/7afbac,
-     * and we will create a mapping hello.txt->7afbac
+     * when this function is executed, we will create a mapping hello.txt->7afbac
+     * and the content of hello.txt will be stored at .gitlet/blobs/7afbac,
      * <p>
      * now we modify the content of hello.txt, its sha1 is a127db,
-     * we call it hello.txt version 2,
-     * when this function is executed, its content will be stored at the .gitlet/blobs/a127db
-     * we will update the mapping hello.txt->a127db
+     * we call it hello.txt version 2, when this function is executed,
+     * we will update the mapping hello.txt->a127db,
+     * and the content of hello.txt will be stored at .gitlet/blobs/a127db
      */
-    public void addBlobs(File stagedForAddDir, File blobsDir) throws IOException {
+    public void addBlobsToCommit(File stagedForAddDir, File blobsDir) throws IOException {
         for (File stagedFile : Objects.requireNonNull(stagedForAddDir.listFiles())) {
             String stagedFileSha1 = sha1((Object) readContents(stagedFile));
+            String stagedFileName = stagedFile.getName();
+            // Recall that Repository.add() have make sure that the
+            // files in stagedForAdd is "tracked but be modified" or "untracked".
 
-            // if a staged file haven't been tracked, track it
-            if(!map.containsKey(stagedFile.getName())){
-
+            // if it is tracked, it must be modified
+            if (map.containsKey(stagedFileName)) {
+                String oldSha1Value = map.get(stagedFileName);
+                // we can only replace the reference, we can not replace the blob
+                // because other commit may refer the blob
+                map.replace(stagedFileName, oldSha1Value, stagedFileSha1);
+            } else {
+                map.put(stagedFileName, stagedFileSha1);
             }
 
-            // if a staged file haven't been modified, ignore it
-            if (map.get(stagedFile.getName()).equals(stagedFileSha1)) {
-                continue;
+            Path src = stagedFile.toPath();
+            Path dest = join(blobsDir, stagedFileSha1).toPath();
+            try {
+                Files.copy(src, dest, StandardCopyOption.REPLACE_EXISTING);
+            } catch (IOException excp) {
+                throw new GitletException(excp.getMessage());
             }
-
-            // if a tracked file have been modified, update the filename->sha1 mapping.
-            // we can't delete the file of version 1, because other commit may refer it
-            if(map.containsKey(stagedFile.getName())&&)
 
         }
     }
 
-    private void addFileInDir(File dir, File file) throws IOException {
-        if (!dir.exists()) {
-            dir.mkdir();
-        }
-
-        Path src = file.toPath();
-        Path dest = join(dir, file.getName()).toPath();
-        Files.copy(src, dest, StandardCopyOption.REPLACE_EXISTING);
-    }
 
     /**
      * if there are files in stageForRemoveDir,
