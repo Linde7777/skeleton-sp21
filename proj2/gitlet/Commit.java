@@ -77,15 +77,26 @@ public class Commit implements Serializable {
 
     /**
      * when we create a new commit, we will clone a parent commit
-     * and modify it, its message and parent should be modified
+     * and modify it, its message, parent, filename->fileSha1 mapping
+     * should be modified, and it should add new blobs to blobsDir.
+     * It may remove some filename->fileSha1 mapping,
+     * since in the new commit some files in parent commit will be untracked
      */
-    public void modifyCommit(String message, String parentSha1) {
+    public void modifyCommit(String message, String parentSha1,
+                             File stagedForAddDir, File blobsDir, File stagedForRemoveDir) {
         this.message = message;
         this.timeStamp = new Date();
         // this.parentSha1List is copied from its parent,
         // it needs to be flushed
         this.parentSha1List = new LinkedList<>();
         this.parentSha1List.add(parentSha1);
+        try {
+            addBlobsToCommit(stagedForAddDir, blobsDir);
+            removeBlobsFromCommit(stagedForRemoveDir);
+        } catch (IOException excp) {
+            throw new GitletException(excp.getMessage());
+        }
+
     }
 
     /**
