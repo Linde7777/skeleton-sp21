@@ -214,16 +214,10 @@ public class Repository {
         checkCommitFailureCases();
         Commit commit = getCommitBySha1(getHeadCommitSha1());
         assert commit != null;
-        commit.modifyCommit(message, parentSha1);
-        try {
-            commit.addBlobsToCommit(GITLET_STAGE_FOR_ADD_DIR, GITLET_BLOBS_DIR);
-            commit.removeBlobsFromCommit(GITLET_STAGE_FOR_REMOVE_DIR);
-
-            String commitSha1 = serializeCommit(commit);
-            setupBranch(commitSha1);
-        } catch (IOException excp) {
-            throw new GitletException(excp.getMessage());
-        }
+        commit.modifyCommit(message, parentSha1,
+                GITLET_STAGE_FOR_ADD_DIR, GITLET_BLOBS_DIR, GITLET_STAGE_FOR_REMOVE_DIR);
+        String commitSha1 = serializeCommit(commit);
+        setupBranch(commitSha1);
 
         deleteAllFilesInDir(GITLET_STAGE_FOR_ADD_DIR);
         deleteAllFilesInDir(GITLET_STAGE_FOR_REMOVE_DIR);
