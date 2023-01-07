@@ -143,10 +143,9 @@ public class Commit implements Serializable {
      * files in stagedForRemoveDir exist in the current commit.
      * <p>
      */
-    public void removeBlobs(File stagedForRemoveDir) {
+    public void removeBlobsFromCommit(File stagedForRemoveDir) {
         for (File fileInStagedDir : Objects.requireNonNull(stagedForRemoveDir.listFiles())) {
-            String fileInStagedDirSha1 = sha1((Object) readContents(fileInStagedDir));
-            this.blobSha1List.remove(fileInStagedDirSha1);
+            this.map.remove(fileInStagedDir.getName());
         }
     }
 
