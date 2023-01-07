@@ -216,8 +216,8 @@ public class Repository {
         assert commit != null;
         commit.modifyCommit(message, parentSha1);
         try {
-            commit.addBlobs(GITLET_STAGE_FOR_ADD_DIR, GITLET_BLOBS_DIR);
-            commit.removeBlobs(GITLET_STAGE_FOR_REMOVE_DIR);
+            commit.addBlobsToCommit(GITLET_STAGE_FOR_ADD_DIR, GITLET_BLOBS_DIR);
+            commit.removeBlobsFromCommit(GITLET_STAGE_FOR_REMOVE_DIR);
 
             String commitSha1 = serializeCommit(commit);
             setupBranch(commitSha1);
