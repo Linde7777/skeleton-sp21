@@ -11,6 +11,7 @@ import java.nio.file.StandardCopyOption;
 import java.util.Date;
 import java.util.LinkedList;
 import java.util.Objects;
+import java.util.TreeMap;
 
 import static gitlet.Utils.*;
 import static gitlet.StudentUtils.*;
@@ -42,12 +43,12 @@ public class Commit implements Serializable {
     }
 
     /**
-     * where store the sha1 value of blobs
+     * where store the mapping of filename and its blob
      */
-    private LinkedList<String> blobSha1List;
+    private TreeMap<String, String> map = new TreeMap<>();
 
-    public LinkedList<String> getBlobSha1List() {
-        return blobSha1List;
+    public TreeMap<String, String> getMap() {
+        return map;
     }
 
     /**
@@ -72,7 +73,7 @@ public class Commit implements Serializable {
     public Commit(String message) {
         this.timeStamp = new Date(0);
         this.message = message;
-        this.blobSha1List = new LinkedList<>();
+        this.map = new TreeMap<>();
         this.parentSha1List = new LinkedList<>();
     }
 
@@ -87,51 +88,36 @@ public class Commit implements Serializable {
 
     /**
      * this function will create blobs from the files in stagedForAdd directory,
-     * and put the sha1 values into Commit.blobSha1List
-     * In order to prevent filename conflict, each file is stored in a
-     * directory which named after this file's sha1 value.
+     * then put the filename and it's sha1 values into Commit.map
      * <p>
      * e.g.
      * hello.txt's sha1 is 7afbac, we call it hello.txt version 1,
-     * when this function is executed, in the .gitlet/blobs/7afbac directory,
-     * there is a hello.txt(version 1)
+     * when this function is executed, its content will be stored at the .gitlet/blobs/7afbac,
+     * and we will create a mapping hello.txt->7afbac
      * <p>
-     * now we modify the content of hello.txt, we call it hello.txt version 2
-     * and its sha1 value is a127db
-     * when this function is executed, in the .gitlet/blobs/a127db directory,
-     * there is a hello.txt(version 2)
-     * <p>
-     * do distinguish them:
-     * blobsDir is .gitlet/blobs/
-     * blobDir is .gitlet/blobs/[sha1 value]
-     * <p>
-     *
-     * @param stagedForAddDir the files in this directory will be committed
-     * @param blobsDir        where store the blobs
+     * now we modify the content of hello.txt, its sha1 is a127db,
+     * we call it hello.txt version 2,
+     * when this function is executed, its content will be stored at the .gitlet/blobs/a127db
+     * we will update the mapping hello.txt->a127db
      */
     public void addBlobs(File stagedForAddDir, File blobsDir) throws IOException {
         for (File stagedFile : Objects.requireNonNull(stagedForAddDir.listFiles())) {
-            String fileSha1 = sha1((Object) readContents(stagedFile));
-            if (this.blobSha1List.contains(fileSha1)) {
+            String stagedFileSha1 = sha1((Object) readContents(stagedFile));
+
+            // if a staged file haven't been tracked, track it
+            if(!map.containsKey(stagedFile.getName())){
+
+            }
+
+            // if a staged file haven't been modified, ignore it
+            if (map.get(stagedFile.getName()).equals(stagedFileSha1)) {
                 continue;
             }
 
-            // if in the previous commit, there is hello.txt (version 1),
-            // and we are going to add hello.txt (version 2) to the current commit,
-            // we need to delete the reference of version 1
-            // (we can't delete the file of version 1, because other commit may refer it)
-            for (String blobSha1 : blobSha1List) {
-                //TODO: it is similiar to the getBlobFile() in Repository
-                // can we optimize it?
-                File blobDir = join(blobsDir, blobSha1);
-                File blobFile = getTheOnlyFileInDir(blobDir);
-                if (blobFile.getName().equals(stagedFile.getName())) {
-                    this.blobSha1List.remove(blobSha1);
-                }
-            }
+            // if a tracked file have been modified, update the filename->sha1 mapping.
+            // we can't delete the file of version 1, because other commit may refer it
+            if(map.containsKey(stagedFile.getName())&&)
 
-            this.blobSha1List.add(fileSha1);
-            addFileInDir(join(blobsDir, fileSha1), stagedFile);
         }
     }
 
