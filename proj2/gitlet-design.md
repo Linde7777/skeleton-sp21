@@ -4,6 +4,10 @@
 
 ## Classes and Data Structures
 
+### Commit
+if a tracked file is renamed, it will be viewed as deleted, 
+and the renamed file will be viewed as untracked file
+
 ### Class: Repository
 
 #### Fields
