@@ -65,7 +65,6 @@ public class Commit implements Serializable {
      * it will initialize Commit with given variable,
      * the timestamp will be set as
      * Thu Jan 01 00:00:00 CST 1970
-     * <p>
      *
      * @param message The message of the commit
      */
@@ -76,6 +75,10 @@ public class Commit implements Serializable {
         this.parentSha1List = new LinkedList<>();
     }
 
+    /**
+     * when we create a new commit, we will clone a parent commit
+     * and modify it, its message and parent should be modified
+     */
     public void modifyCommit(String message, String parentSha1) {
         this.message = message;
         this.timeStamp = new Date();
