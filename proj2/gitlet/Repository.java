@@ -118,36 +118,53 @@ public class Repository {
     }
 
     /**
-     * copy the file in CWD to the GITLET_STAGE_FOR_ADD_DIR,
-     * if the file we add in to GITLET_STAGE_FOR_ADD is identical
-     * to one of the files in current commit, we won't add it.
+    * add file to stagedForAddDir
      *
-     * @param filename the file we want to add
+     * @param CWDFilename the file we want to add
      */
-    public static void add(String filename) {
+    public static void add(String CWDFilename) {
         checkInitialize();
-        File file = join(CWD, filename);
-        if (!file.exists()) {
+        File CWDFile = join(CWD, CWDFilename);
+        if (!CWDFile.exists()) {
             System.out.println("File does not exist.");
             System.exit(0);
         }
 
-        // if currentCommit is null, that means nothing has been committed yet,
-        // so we don't need to care about whether the file we add is identical
-        // to one of the files in the current Commit
-        String fileSha1 = sha1((Object) readContents(file));
+        String CWDFileSha1 = sha1((Object) readContents(CWDFile));
         Commit currentCommit = getCommitBySha1(getHeadCommitSha1());
-        if (currentCommit != null && currentCommit.getBlobSha1List().contains(fileSha1)) {
+        TreeMap<String, String> map = currentCommit.getMap();
+        // If the current working version of the file is identical to the
+        // version in the current commit, do not stage it to be added,
+        if (map.containsKey(CWDFilename) && map.get(CWDFilename).equals(CWDFileSha1)) {
             System.exit(0);
+
+            // and remove it from the staging area if it is already
+            // there (as can happen when a file is changed, added,
+            // and then changed back to it’s original version).
+            File fileInStagedForAdd = join(GITLET_STAGE_FOR_ADD_DIR, CWDFilename);
+            if (fileInStagedForAdd.exists()) {
+                fileInStagedForAdd.delete();
+            }
+
+            // The file will no longer be staged for removal (see gitlet rm),
+            // if it was at the time of the command.
+            File fileInStagedForRemove = join(GITLET_STAGE_FOR_REMOVE_DIR, CWDFilename);
+            if (fileInStagedForRemove.exists()) {
+                fileInStagedForRemove.delete();
+            }
         }
 
-        Path src = file.toPath();
-        Path dest = join(GITLET_STAGE_FOR_ADD_DIR, file.getName()).toPath();
+        // if a file haven't been tracked
+        // or a file is tracked, but it has been modified
+        // we need to add it to staging area
+        Path src = CWDFile.toPath();
+        Path dest = join(GITLET_STAGE_FOR_ADD_DIR, CWDFile.getName()).toPath();
         try {
             Files.copy(src, dest, StandardCopyOption.REPLACE_EXISTING);
         } catch (IOException excp) {
             throw new GitletException(excp.getMessage());
         }
+
     }
 
     private static String getHeadCommitSha1() {
@@ -161,11 +178,11 @@ public class Repository {
     //TODO: need to throw execption instead return null?
     private static Commit getCommitBySha1(String commitSha1) {
         if (commitSha1.length() < 40) {
-            return null;
+            throw new GitletException("Commit Sha1 is too short");
         }
         File file = join(GITLET_COMMITS_DIR, commitSha1.substring(0, 2), commitSha1);
         if (!file.exists()) {
-            return null;
+            throw new GitletException("Commit File does not exist");
         }
         return readObject(file, Commit.class);
     }
