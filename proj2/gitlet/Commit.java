@@ -110,7 +110,7 @@ public class Commit implements Serializable {
             String stagedFileSha1 = sha1((Object) readContents(stagedFile));
             String stagedFileName = stagedFile.getName();
             // Recall that Repository.add() have make sure that the
-            // files in stagedForAdd is "tracked but be modified" or "untracked".
+            // files in stagedForAdd are "tracked but be modified" or "untracked".
 
             // if it is tracked, it must be modified
             if (map.containsKey(stagedFileName)) {
