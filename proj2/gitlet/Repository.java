@@ -118,7 +118,7 @@ public class Repository {
     }
 
     /**
-    * add file to stagedForAddDir
+     * add file to stagedForAddDir
      *
      * @param CWDFilename the file we want to add
      */
@@ -136,8 +136,6 @@ public class Repository {
         // If the current working version of the file is identical to the
         // version in the current commit, do not stage it to be added,
         if (map.containsKey(CWDFilename) && map.get(CWDFilename).equals(CWDFileSha1)) {
-            System.exit(0);
-
             // and remove it from the staging area if it is already
             // there (as can happen when a file is changed, added,
             // and then changed back to it’s original version).
@@ -152,18 +150,19 @@ public class Repository {
             if (fileInStagedForRemove.exists()) {
                 fileInStagedForRemove.delete();
             }
+        } else {
+            // if a file haven't been tracked
+            // or a file is tracked, but it has been modified
+            // we need to add it to staging area
+            Path src = CWDFile.toPath();
+            Path dest = join(GITLET_STAGE_FOR_ADD_DIR, CWDFile.getName()).toPath();
+            try {
+                Files.copy(src, dest, StandardCopyOption.REPLACE_EXISTING);
+            } catch (IOException excp) {
+                throw new GitletException(excp.getMessage());
+            }
         }
 
-        // if a file haven't been tracked
-        // or a file is tracked, but it has been modified
-        // we need to add it to staging area
-        Path src = CWDFile.toPath();
-        Path dest = join(GITLET_STAGE_FOR_ADD_DIR, CWDFile.getName()).toPath();
-        try {
-            Files.copy(src, dest, StandardCopyOption.REPLACE_EXISTING);
-        } catch (IOException excp) {
-            throw new GitletException(excp.getMessage());
-        }
 
     }
 
