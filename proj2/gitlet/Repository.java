@@ -190,7 +190,7 @@ public class Repository {
      * notice that this is the public method
      */
     public static void setUpCommit(String message) {
-        if(message==null||message.equals("")){
+        if (message == null || message.equals("")) {
             System.out.println("Please enter a commit message.");
             System.exit(0);
         }
