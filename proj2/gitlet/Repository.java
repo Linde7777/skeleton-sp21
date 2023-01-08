@@ -190,7 +190,12 @@ public class Repository {
      * notice that this is the public method
      */
     public static void setUpCommit(String message) {
+        if(message==null||message.equals("")){
+            System.out.println("Please enter a commit message.");
+            System.exit(0);
+        }
         checkInitialize();
+        checkIfStagedDirsAreEmpty();
         String HEADSha1 = getHeadCommitSha1();
         setUpCommit(message, HEADSha1);
     }
@@ -211,7 +216,6 @@ public class Repository {
      * @param parentSha1 the sha1 value of the parent commit
      */
     private static void setUpCommit(String message, String parentSha1) {
-        checkCommitFailureCases();
         Commit commit = getCommitBySha1(getHeadCommitSha1());
         commit.modifyCommit(message, parentSha1,
                 GITLET_STAGE_FOR_ADD_DIR, GITLET_BLOBS_DIR, GITLET_STAGE_FOR_REMOVE_DIR);
@@ -221,7 +225,7 @@ public class Repository {
         deleteAllFilesInDir(GITLET_STAGE_FOR_REMOVE_DIR);
     }
 
-    private static void checkCommitFailureCases() {
+    private static void checkIfStagedDirsAreEmpty() {
         if (Objects.requireNonNull(GITLET_STAGE_FOR_ADD_DIR.list()).length == 0
                 && Objects.requireNonNull(GITLET_STAGE_FOR_REMOVE_DIR.list()).length == 0) {
             System.out.println("No changes added to the commit.");
@@ -845,7 +849,7 @@ public class Repository {
             System.exit(0);
         }
 
-        checkCommitFailureCases();
+        checkIfStagedDirsAreEmpty();
 
         Commit commitAtTargetBranch = getCommitAtTargetBranch(targetBranchName);
         checkIfCWDFileWillBeOverwrittenByCommit(commitAtTargetBranch);
