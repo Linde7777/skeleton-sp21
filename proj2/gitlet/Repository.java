@@ -286,9 +286,9 @@ public class Repository {
      * and remove the file from working directory if the user has not already done so
      * (do not remove it unless it is tracked in the current commit).
      *
-     * @param filename the name of the file that we want to remove
+     * @param targetFilename the name of the file that we want to remove
      */
-    public static void remove(String filename) {
+    public static void remove(String targetFilename) {
         checkInitialize();
         boolean findFileInStageForAddDir = false;
         File[] filesInStageForAddDir = GITLET_STAGE_FOR_ADD_DIR.listFiles();
@@ -296,7 +296,7 @@ public class Repository {
         // and then we move down to check if we need to delete file from current commit.
         if (filesInStageForAddDir != null) {
             for (File file : filesInStageForAddDir) {
-                if (filename.equals(file.getName())) {
+                if (targetFilename.equals(file.getName())) {
                     findFileInStageForAddDir = true;
                     file.delete();
                 }
@@ -645,10 +645,13 @@ public class Repository {
 
     private static List<File> getFilesInCommit(Commit commit) {
         List<File> list = new ArrayList<>();
-        for (String blobSha1 : commit.getBlobSha1List()) {
-            File file = getBlobFile(blobSha1);
+        TreeMap<String, String> map = commit.getMap();
+        for (String filename : map.keySet()) {
+            String fileSha1 = map.get(filename);
+            File file = getBlobFile(fileSha1);
             list.add(file);
         }
+
         Collections.sort(list);
         return list;
     }
