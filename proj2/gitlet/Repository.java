@@ -260,14 +260,12 @@ public class Repository {
         checkInitialize();
         boolean findFileInStageForAddDir = false;
         File[] filesInStageForAddDir = GITLET_STAGE_FOR_ADD_DIR.listFiles();
-        // if filesInStageForAddDir is null, it is ok, we don't need to do anything,
+        // if filesInStageForAddDir is empty, it is ok, we don't need to do anything,
         // and then we move down to check if we need to delete file from current commit.
-        if (filesInStageForAddDir != null) {
-            for (File file : filesInStageForAddDir) {
-                if (targetFilename.equals(file.getName())) {
-                    findFileInStageForAddDir = true;
-                    file.delete();
-                }
+        for (File file : filesInStageForAddDir) {
+            if (targetFilename.equals(file.getName())) {
+                findFileInStageForAddDir = true;
+                file.delete();
             }
         }
 
@@ -284,6 +282,10 @@ public class Repository {
                 Files.copy(src, dest, StandardCopyOption.REPLACE_EXISTING);
             } catch (IOException excp) {
                 throw new GitletException(excp.getMessage());
+            }
+
+            if (join(CWD, targetFilename).exists()) {
+                join(CWD, targetFilename).delete();
             }
         }
 
@@ -723,7 +725,7 @@ public class Repository {
         for (String filename : filenamesList) {
             if (!join(CWD, filename).exists()
                     && !join(GITLET_STAGE_FOR_REMOVE_DIR, filename).exists()) {
-                fileStateMap.put(filename,"deleted");
+                fileStateMap.put(filename, "deleted");
             }
         }
 
