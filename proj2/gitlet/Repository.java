@@ -644,16 +644,15 @@ public class Repository {
     }
 
     private static List<File> getFilesInCommit(Commit commit) {
-        List<File> list = new ArrayList<>();
+        List<File> filesList = new ArrayList<>();
         TreeMap<String, String> map = commit.getMap();
         for (String filename : map.keySet()) {
             String fileSha1 = map.get(filename);
             File file = getBlobFile(fileSha1);
-            list.add(file);
+            filesList.add(file);
         }
 
-        Collections.sort(list);
-        return list;
+        return filesList;
     }
 
     private static List<String> getFilenamesInCommit(Commit commit) {
