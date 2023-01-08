@@ -234,7 +234,7 @@ public class Repository {
     }
 
     private static File getBlobFile(String blobSha1) {
-        return getTheOnlyFileInDir(join(GITLET_BLOBS_DIR, blobSha1));
+        return join(GITLET_BLOBS_DIR, blobSha1);
     }
 
     /**
