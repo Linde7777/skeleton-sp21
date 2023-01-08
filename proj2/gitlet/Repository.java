@@ -624,8 +624,20 @@ public class Repository {
      * branch, and absent in the given branch should be removed (and untracked).
      */
     private static void mergeCase6(Commit spiltPointCommit,
-                                   Commit currentCommit, Commit targetCommit){
+                                   Commit currentCommit, Commit targetCommit) {
+        TreeMap<String, String> spiltMap = spiltPointCommit.getMap();
+        TreeMap<String, String> currMap = currentCommit.getMap();
+        TreeMap<String, String> targetMap = targetCommit.getMap();
+        for (String spiltFilename : spiltMap.keySet()) {
+            String spiltFileSha1 = spiltMap.get(spiltFilename);
+            if (currMap.containsKey(spiltFilename) && !targetMap.containsKey(spiltFilename)) {
+                String currFileSha1 = currMap.get(spiltFilename);
+                if (currFileSha1.equals(spiltFileSha1)) {
+                    remove(spiltFilename);
+                }
 
+            }
+        }
     }
 
     /**
