@@ -515,16 +515,16 @@ public class Repository {
         List<String> filenamesInCommit = getFilenamesInCommit(currentCommit);
         System.out.println("=== Untracked Files ===");
         for (File CWDFile : CWD.listFiles()) {
+            // TODO: I don't know why .gitlet is not hidden and it will be viewed as a file
+            if (CWDFile.getName().equals(".gitlet")) {
+                continue;
+            }
             // if a file is present in the CWD but neither stagedForAddDir nor tracked
             boolean condition1 = !filenamesInCommit.contains(CWDFile.getName())
                     && !join(GITLET_STAGE_FOR_ADD_DIR, CWDFile.getName()).exists();
             // if there is a file both exist in CWD and stagedForRemoveDir
             boolean condition2 = join(GITLET_STAGE_FOR_REMOVE_DIR, CWDFile.getName()).exists();
             if (condition1 || condition2) {
-                // TODO: I don't know why .gitlet is not hidden and it will be viewed as a file
-                if (CWDFile.getName().equals(".gitlet")) {
-                    continue;
-                }
                 System.out.println(CWDFile.getName());
             }
         }
@@ -697,6 +697,10 @@ public class Repository {
         List<String> filenamesList = getFilenamesInCommit(currentCommit);
         TreeMap<String, String> commitMap = currentCommit.getMap();
         for (String filename : filenamesList) {
+            File CWDFile = join(CWD, filename);
+            if (!CWDFile.exists()) {
+                continue;
+            }
             String trackedFileSha1 = commitMap.get(filename);
             String CWDFileSha1 = sha1((Object) readContents(join(CWD, filename)));
             if (!CWDFileSha1.equals(trackedFileSha1)) {
