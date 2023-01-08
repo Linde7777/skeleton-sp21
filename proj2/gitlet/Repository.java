@@ -49,6 +49,12 @@ public class Repository {
     public static final File GITLET_BLOBS_DIR = join(GITLET_DIR, "blobs");
 
     /**
+     * we copy blobs from .gitlet/blobs and paste them in this directory,
+     * then rename it(because blobs is just content, their name is just their sha1)
+     */
+    public static final File GITLET_BLOBS_CONVERT_DIR = join(GITLET_DIR, "convert");
+
+    /**
      * The .gitlet/commits directory, where store the serialized Commits
      */
     public static final File GITLET_COMMITS_DIR = join(GITLET_DIR, "commits");
@@ -74,13 +80,6 @@ public class Repository {
     public static final File HEAD_FILE = join(GITLET_BRANCHES_DIR, "HEAD");
 
 
-    private static void checkInitialize() {
-        if (!GITLET_DIR.exists()) {
-            System.out.println("Not in an initialized Gitlet directory.");
-            System.exit(0);
-        }
-    }
-
     /**
      * notice that we won't call add() then call commit(),
      * we will call setUpCommit() instead.
@@ -95,6 +94,7 @@ public class Repository {
         GITLET_STAGE_FOR_ADD_DIR.mkdir();
         GITLET_STAGE_FOR_REMOVE_DIR.mkdir();
         GITLET_BLOBS_DIR.mkdir();
+        GITLET_BLOBS_CONVERT_DIR.mkdir();
         GITLET_COMMITS_DIR.mkdir();
         GITLET_BRANCHES_DIR.mkdir();
         try {
@@ -166,26 +166,6 @@ public class Repository {
 
     }
 
-    private static String getHeadCommitSha1() {
-        String sha1 = readContentsAsString(HEAD_FILE);
-        if (sha1.equals("")) {
-            throw new GitletException("HEAD_FILE is empty");
-        }
-        return sha1;
-    }
-
-    //TODO: need to throw execption instead return null?
-    private static Commit getCommitBySha1(String commitSha1) {
-        if (commitSha1.length() < 40) {
-            throw new GitletException("Commit Sha1 is too short");
-        }
-        File file = join(GITLET_COMMITS_DIR, commitSha1.substring(0, 2), commitSha1);
-        if (!file.exists()) {
-            throw new GitletException("Commit File does not exist");
-        }
-        return readObject(file, Commit.class);
-    }
-
     /**
      * notice that this is the public method
      */
@@ -223,18 +203,6 @@ public class Repository {
         setupBranch(commitSha1);
         deleteAllFilesInDir(GITLET_STAGE_FOR_ADD_DIR);
         deleteAllFilesInDir(GITLET_STAGE_FOR_REMOVE_DIR);
-    }
-
-    private static void checkIfStagedDirsAreEmpty() {
-        if (Objects.requireNonNull(GITLET_STAGE_FOR_ADD_DIR.list()).length == 0
-                && Objects.requireNonNull(GITLET_STAGE_FOR_REMOVE_DIR.list()).length == 0) {
-            System.out.println("No changes added to the commit.");
-            System.exit(0);
-        }
-    }
-
-    private static File getBlobFile(String blobSha1) {
-        return join(GITLET_BLOBS_DIR, blobSha1);
     }
 
     /**
@@ -365,25 +333,6 @@ public class Repository {
 
     }
 
-    private static String formatDate(Date date) {
-        // FYI: https://docs.oracle.com/javase/7/docs/api/java/util/Formatter.html
-        return String.format("%1$ta %1$tb %1$te %1$tH:%1$tM:%1$tS %1$tY %1$tz", date);
-        /*
-            you can also use the following code to get the same output:
-            SimpleDateFormat formatter =
-                                 new SimpleDateFormat("E MMM dd hh:mm:ss yyyy Z");
-            String formattedDateString = formatter.format(date);
-
-            Since gitlet spec say I should use java.util.formatter,
-            I didn't use SimpleDateFormat.
-            if your Operating System's language is not English,
-            it might have problem to display weekday and month,
-            because weekday and month in String will be other language(e.g. Chinese),
-            and the terminal may have problem to display that.
-            you can try to run this program on Ubuntu
-            */
-    }
-
     public static void branch(String branchName) {
         checkInitialize();
         File branchFile = join(GITLET_BRANCHES_DIR, branchName);
@@ -431,7 +380,7 @@ public class Repository {
         Commit commit = getCommitBySha1(getHeadCommitSha1());
         for (String blobSha1 : commit.getBlobSha1List()) {
             // recall that blob are stored like: .gitlet/blobs/40 bit sha1 value/hello.txt
-            File blobFile = getBlobFile(blobSha1);
+            File blobFile = getBlob(blobSha1);
             if (blobFile.getName().equals(filename)) {
                 findThisFileInCurrentCommit = true;
                 Path src = blobFile.toPath();
@@ -466,7 +415,7 @@ public class Repository {
         boolean findThisFileInCurrentCommit = false;
         for (String blobSha1 : commit.getBlobSha1List()) {
             // recall that blob are stored like: .gitlet/blobs/40 bit sha1 value/hello.txt
-            File blobFile = getBlobFile(blobSha1);
+            File blobFile = getBlob(blobSha1);
             if (blobFile.getName().equals(filename)) {
                 findThisFileInCurrentCommit = true;
                 Path src = blobFile.toPath();
@@ -483,47 +432,6 @@ public class Repository {
             System.out.println("File does not exist in that commit.");
         }
 
-    }
-
-    /**
-     * @param commitId the abbreviated commit sha1
-     */
-    private static String getCompletedSha1(String commitId) {
-        String completedSha1 = null;
-        int len = commitId.length();
-        if (commitId.length() < 2) {
-            throw new GitletException("The commit id must have at least 2 digits in length.");
-        }
-        String firstTwoSha1 = commitId.substring(0, 2);
-        File commitDir = join(GITLET_COMMITS_DIR, firstTwoSha1);
-        List<String> filenamesInCommitDir = plainFilenamesIn(commitDir);
-        if (filenamesInCommitDir == null) {
-            return null;
-        }
-
-        /*
-        let's say commitId is 3ac
-        and in the .gitlet/commits/3a/ directory
-        there are two files: 3acb12 and 3ac891
-        3ac is not long enough to distinguish the two files,
-        we don't know what commit should we pick.
-         */
-        boolean foundAFileSimilarToCommitId = false;
-        for (String filename : filenamesInCommitDir) {
-            if (filename.substring(0, len).equals(commitId)) {
-                // if it has already found a file similar to commit id,
-                // and now it found again, that means there are at least
-                // two files that are similar to commit id
-                if (foundAFileSimilarToCommitId) {
-                    throw new GitletException("commit id is not long enough to distinguish a commit");
-                } else {
-                    foundAFileSimilarToCommitId = true;
-                    completedSha1 = filename;
-                }
-            }
-        }
-
-        return completedSha1;
     }
 
     /**
@@ -567,7 +475,7 @@ public class Repository {
         }
 
         for (String blobSha1 : commitAtTargetBranch.getBlobSha1List()) {
-            File file = getBlobFile(blobSha1);
+            File file = getBlob(blobSha1);
             Path src = file.toPath();
             Path dest = join(CWD, file.getName()).toPath();
             try {
@@ -643,86 +551,6 @@ public class Repository {
 
     }
 
-    private static List<File> getFilesInCommit(Commit commit) {
-        List<File> filesList = new ArrayList<>();
-        TreeMap<String, String> map = commit.getMap();
-        for (String filename : map.keySet()) {
-            String fileSha1 = map.get(filename);
-            File file = getBlobFile(fileSha1);
-            filesList.add(file);
-        }
-
-        return filesList;
-    }
-
-    private static List<String> getFilenamesInCommit(Commit commit) {
-        List<String> filenamesList = new ArrayList<>();
-        TreeMap<String, String> map = commit.getMap();
-        filenamesList.addAll(map.keySet());
-
-        return filenamesList;
-    }
-
-    /**
-     * Copied from gitlet spec:
-     * A file in the working directory is "modified but not staged" if it is:
-     * Tracked in the current commit, changed in the working directory, but not staged; or
-     * Staged for addition, but with different contents than in the working directory; or
-     * Staged for addition, but deleted in the working directory; or
-     * Not staged for removal, but tracked in the current commit and deleted from the working directory.
-     *
-     * @return the names of the files and the states of the files
-     */
-    private static TreeMap<String, String> getModifiedButNotStagedFilesInCWD() {
-
-        TreeMap<String, String> map = new TreeMap<>();
-        //List<String> list = new ArrayList<>();
-        Commit currentCommit = getCommitBySha1(getHeadCommitSha1());
-
-        for (String blobSha1 : currentCommit.getBlobSha1List()) {
-            File blobFile = getBlobFile(blobSha1);
-            File CWDFileTrackedInCurrentCommit = join(CWD, blobFile.getName());
-            // if a file in CWD is tracked in the current commit
-            if (CWDFileTrackedInCurrentCommit.exists()) {
-                // and it is changed in the working directory
-                if (!sha1(readContentsAsString(CWDFileTrackedInCurrentCommit)).equals(blobSha1)) {
-                    // but it is not staged
-                    if (!join(GITLET_STAGE_FOR_ADD_DIR, blobFile.getName()).exists()
-                            || !join(GITLET_STAGE_FOR_REMOVE_DIR, blobFile.getName()).exists()) {
-                        map.put(blobFile.getName(), "modified");
-                    }
-                }
-            }
-        }
-
-        for (File file : Objects.requireNonNull(GITLET_STAGE_FOR_ADD_DIR.listFiles())) {
-            if (join(CWD, file.getName()).exists()) {
-                // if the file is staged for addition,
-                // but with different contents than in the working directory
-                if (!sha1(readContentsAsString(file)).equals(
-                        sha1(readContentsAsString(join(CWD, file.getName()))))) {
-                    map.put(file.getName(), "modified");
-                }
-            } else {
-                // if the "file in stagedForAddDir" is deleted
-                // in the working directory
-                map.put(file.getName(), "deleted");
-            }
-        }
-
-        // there is a file tracked in current commit, but it disappears in CWD,
-        // and it is not in stageForRemoveDir
-        for (String blobSha1 : currentCommit.getBlobSha1List()) {
-            File blobFile = getBlobFile(blobSha1);
-            if (!join(CWD, blobFile.getName()).exists() &&
-                    !join(GITLET_STAGE_FOR_REMOVE_DIR, blobFile.getName()).exists()) {
-                map.put(blobFile.getName(), "deleted");
-            }
-        }
-        //Collections.sort(list);
-        return map;
-    }
-
     /**
      * Copied from gitlet spec:
      * Checks out all the files tracked by the given commit.
@@ -755,7 +583,7 @@ public class Repository {
 
         // check out all the files in the targetCommit
         for (String blobSha1 : targetCommit.getBlobSha1List()) {
-            File blobFile = getBlobFile(blobSha1);
+            File blobFile = getBlob(blobSha1);
             Path src = blobFile.toPath();
             Path dest = join(CWD, blobFile.getName()).toPath();
             try {
@@ -800,11 +628,6 @@ public class Repository {
                 System.exit(0);
             }
         }
-
-
-        //TODO: in the comment, it says mention "current commit",
-        // but the code doesn't have currentCommit
-
     }
 
     public static void merge(String targetBranchName) {
@@ -824,7 +647,7 @@ public class Repository {
 
         // case 1
         for (String blobSha1 : commitAtTargetBranch.getBlobSha1List()) {
-            File blobFile = getBlobFile(blobSha1);
+            File blobFile = getBlob(blobSha1);
 
         }
 
@@ -861,7 +684,6 @@ public class Repository {
         return getCommitBySha1(readContentsAsString(targetBranchFile));
     }
 
-
     /**
      * This is similar to find the latest common ancestor of two linked-list
      */
@@ -884,5 +706,170 @@ public class Repository {
         return getCommitBySha1(firstParentSha1);
     }
 
+    private static void checkInitialize() {
+        if (!GITLET_DIR.exists()) {
+            System.out.println("Not in an initialized Gitlet directory.");
+            System.exit(0);
+        }
+    }
+
+    private static List<String> getFilenamesInCommit(Commit commit) {
+        List<String> filenamesList = new ArrayList<>();
+        TreeMap<String, String> map = commit.getMap();
+        filenamesList.addAll(map.keySet());
+
+        return filenamesList;
+    }
+
+    /**
+     * Copied from gitlet spec:
+     * A file in the working directory is "modified but not staged" if it is:
+     * Tracked in the current commit, changed in the working directory, but not staged; or
+     * Staged for addition, but with different contents than in the working directory; or
+     * Staged for addition, but deleted in the working directory; or
+     * Not staged for removal, but tracked in the current commit and deleted from the working directory.
+     *
+     * @return the names of the files and the states of the files
+     */
+    private static TreeMap<String, String> getModifiedButNotStagedFilesInCWD() {
+
+        TreeMap<String, String> map = new TreeMap<>();
+        //List<String> list = new ArrayList<>();
+        Commit currentCommit = getCommitBySha1(getHeadCommitSha1());
+
+        for (String blobSha1 : currentCommit.getBlobSha1List()) {
+            File blobFile = getBlob(blobSha1);
+            File CWDFileTrackedInCurrentCommit = join(CWD, blobFile.getName());
+            // if a file in CWD is tracked in the current commit
+            if (CWDFileTrackedInCurrentCommit.exists()) {
+                // and it is changed in the working directory
+                if (!sha1(readContentsAsString(CWDFileTrackedInCurrentCommit)).equals(blobSha1)) {
+                    // but it is not staged
+                    if (!join(GITLET_STAGE_FOR_ADD_DIR, blobFile.getName()).exists()
+                            || !join(GITLET_STAGE_FOR_REMOVE_DIR, blobFile.getName()).exists()) {
+                        map.put(blobFile.getName(), "modified");
+                    }
+                }
+            }
+        }
+
+        for (File file : Objects.requireNonNull(GITLET_STAGE_FOR_ADD_DIR.listFiles())) {
+            if (join(CWD, file.getName()).exists()) {
+                // if the file is staged for addition,
+                // but with different contents than in the working directory
+                if (!sha1(readContentsAsString(file)).equals(
+                        sha1(readContentsAsString(join(CWD, file.getName()))))) {
+                    map.put(file.getName(), "modified");
+                }
+            } else {
+                // if the "file in stagedForAddDir" is deleted
+                // in the working directory
+                map.put(file.getName(), "deleted");
+            }
+        }
+
+        // there is a file tracked in current commit, but it disappears in CWD,
+        // and it is not in stageForRemoveDir
+        for (String blobSha1 : currentCommit.getBlobSha1List()) {
+            File blobFile = getBlob(blobSha1);
+            if (!join(CWD, blobFile.getName()).exists() &&
+                    !join(GITLET_STAGE_FOR_REMOVE_DIR, blobFile.getName()).exists()) {
+                map.put(blobFile.getName(), "deleted");
+            }
+        }
+        //Collections.sort(list);
+        return map;
+    }
+
+    private static String getHeadCommitSha1() {
+        String sha1 = readContentsAsString(HEAD_FILE);
+        if (sha1.equals("")) {
+            throw new GitletException("HEAD_FILE is empty");
+        }
+        return sha1;
+    }
+
+    private static Commit getCommitBySha1(String commitSha1) {
+        if (commitSha1.length() < 40) {
+            throw new GitletException("Commit Sha1 is too short");
+        }
+        File file = join(GITLET_COMMITS_DIR, commitSha1.substring(0, 2), commitSha1);
+        if (!file.exists()) {
+            throw new GitletException("Commit File does not exist");
+        }
+        return readObject(file, Commit.class);
+    }
+
+    private static File getBlob(String blobSha1) {
+        return join(GITLET_BLOBS_DIR, blobSha1);
+    }
+
+    private static void checkIfStagedDirsAreEmpty() {
+        if (Objects.requireNonNull(GITLET_STAGE_FOR_ADD_DIR.list()).length == 0
+                && Objects.requireNonNull(GITLET_STAGE_FOR_REMOVE_DIR.list()).length == 0) {
+            System.out.println("No changes added to the commit.");
+            System.exit(0);
+        }
+    }
+
+    private static String formatDate(Date date) {
+        // FYI: https://docs.oracle.com/javase/7/docs/api/java/util/Formatter.html
+        return String.format("%1$ta %1$tb %1$te %1$tH:%1$tM:%1$tS %1$tY %1$tz", date);
+        /*
+            you can also use the following code to get the same output:
+            SimpleDateFormat formatter =
+                                 new SimpleDateFormat("E MMM dd hh:mm:ss yyyy Z");
+            String formattedDateString = formatter.format(date);
+
+            Since gitlet spec say I should use java.util.formatter,
+            I didn't use SimpleDateFormat.
+            if your Operating System's language is not English,
+            it might have problem to display weekday and month,
+            because weekday and month in String will be other language(e.g. Chinese),
+            and the terminal may have problem to display that.
+            you can try to run this program on Ubuntu
+            */
+    }
+
+    /**
+     * @param commitId the abbreviated commit sha1
+     */
+    private static String getCompletedSha1(String commitId) {
+        String completedSha1 = null;
+        int len = commitId.length();
+        if (commitId.length() < 2) {
+            throw new GitletException("The commit id must have at least 2 digits in length.");
+        }
+        String firstTwoSha1 = commitId.substring(0, 2);
+        File commitDir = join(GITLET_COMMITS_DIR, firstTwoSha1);
+        List<String> filenamesInCommitDir = plainFilenamesIn(commitDir);
+        if (filenamesInCommitDir == null) {
+            return null;
+        }
+
+        /*
+        let's say commitId is 3ac
+        and in the .gitlet/commits/3a/ directory
+        there are two files: 3acb12 and 3ac891
+        3ac is not long enough to distinguish the two files,
+        we don't know what commit should we pick.
+         */
+        boolean foundAFileSimilarToCommitId = false;
+        for (String filename : filenamesInCommitDir) {
+            if (filename.substring(0, len).equals(commitId)) {
+                // if it has already found a file similar to commit id,
+                // and now it found again, that means there are at least
+                // two files that are similar to commit id
+                if (foundAFileSimilarToCommitId) {
+                    throw new GitletException("commit id is not long enough to distinguish a commit");
+                } else {
+                    foundAFileSimilarToCommitId = true;
+                    completedSha1 = filename;
+                }
+            }
+        }
+
+        return completedSha1;
+    }
 
 }
