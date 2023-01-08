@@ -592,9 +592,9 @@ public class Repository {
 
     public static void merge(String targetBranchName) {
         checkMergeFailureCases(targetBranchName);
-        Commit commitAtTargetBranch = getCommitAtTargetBranch(targetBranchName);
-        Commit commitAtCurrentBranch = getCommitBySha1(getHeadCommitSha1());
-        Commit commitAtSplitPoint = getCommitAtSplitPoint(commitAtTargetBranch, commitAtCurrentBranch);
+        Commit targetCommit = getCommitAtTargetBranch(targetBranchName);
+        Commit currentCommit = getCommitBySha1(getHeadCommitSha1());
+        Commit spiltPointCommit = getCommitAtSplitPoint(targetCommit, currentCommit);
 
         if (commitAtSplitPoint == commitAtTargetBranch) {
             System.out.println("Given branch is an ancestor of the current branch.");
@@ -606,6 +606,59 @@ public class Repository {
         }
 
 
+    }
+
+
+    /**
+     * Any files that have been modified in the current branch but
+     * not in the given branch since the split point should stay as they are.
+     */
+    private static void mergeCase2(Commit spiltPointCommit,
+                                   Commit currentCommit, Commit targetCommit) {
+        TreeMap<String, String> spiltMap = spiltPointCommit.getMap();
+        TreeMap<String, String> currMap = currentCommit.getMap();
+        TreeMap<String, String> targetMap = targetCommit.getMap();
+        for (String currFilename : currMap.keySet()) {
+            if (targetMap.containsKey(currFilename)) {
+                String currFileSha1 = currMap.get(currFilename);
+                String targetFileSha1 = targetMap.get(currFilename);
+                String spiltFileSha1 = spiltMap.get(currFilename);
+                if (!currFileSha1.equals(spiltFileSha1) && targetFileSha1.equals(spiltFileSha1)) {
+                    // TODO: should I delete this function?
+                    // we do nothing
+                }
+            }
+        }
+    }
+
+    /**
+     * Any files that have been modified in the given branch since the split point,
+     * but not modified in the current branch since the split point should be changed
+     * to their versions in the given branch (checked out from the commit at the
+     * front of the given branch). These files should then all be automatically staged.
+     */
+    private static void mergeCase1(Commit spiltPointCommit,
+                                   Commit currentCommit, Commit targetCommit) {
+        TreeMap<String, String> spiltMap = spiltPointCommit.getMap();
+        TreeMap<String, String> currMap = currentCommit.getMap();
+        TreeMap<String, String> targetMap = targetCommit.getMap();
+        for (String targetFilename : targetMap.keySet()) {
+            if (spiltMap.containsKey(targetFilename) && currMap.containsKey(targetFilename)) {
+                String targetFileSha1 = targetMap.get(targetFilename);
+                String spiltFileSha1 = spiltMap.get(targetFilename);
+                String currFileSha1 = currMap.get(targetFilename);
+                if (!targetFileSha1.equals(spiltFileSha1) && currFileSha1.equals(spiltFileSha1)) {
+                    checkoutCommitAndFilename(targetCommit, targetFilename);
+                    Path src = join(CWD, targetFilename).toPath();
+                    Path dest = join(GITLET_STAGE_FOR_ADD_DIR, targetFilename).toPath();
+                    try {
+                        Files.copy(src, dest, StandardCopyOption.REPLACE_EXISTING);
+                    } catch (IOException excp) {
+                        throw new GitletException(excp.getMessage());
+                    }
+                }
+            }
+        }
     }
 
     private static void checkMergeFailureCases(String targetBranchName) {
