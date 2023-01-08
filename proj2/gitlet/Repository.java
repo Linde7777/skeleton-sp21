@@ -354,6 +354,44 @@ public class Repository {
         }
     }
 
+
+    /**
+     * Copied from gitlet spec:
+     * Takes the version of the file as it exists in the commit with the given id,
+     * and puts it in the working directory, overwriting the version of the file
+     * that’s already there if there is one. The new version of the file is not staged.
+     */
+    public static void checkoutCommitAndFilename(String targetCommitId, String targetFilename) {
+        checkInitialize();
+        Commit targetCommit = getCommitBySha1(getCompletedSha1(targetCommitId));
+        checkoutCommitAndFilename(targetCommit, targetFilename);
+    }
+
+    private static void checkoutCommitAndFilename(Commit targetCommit, String targetFilename) {
+        if (targetCommit == null) {
+            System.out.println("No commit with that id exists.");
+            System.exit(0);
+        }
+
+        List<String> filenamesList = getFilenamesInCommit(targetCommit);
+        if (!filenamesList.contains(targetFilename)) {
+            System.out.println("File does not exist in that commit.");
+            System.exit(0);
+        }
+
+        TreeMap<String, String> map = targetCommit.getMap();
+        String blobSha1 = map.get(targetFilename);
+        File blob = getBlob(blobSha1);
+        Path src = blob.toPath();
+        Path dest = join(CWD, targetFilename).toPath();
+        try {
+            Files.copy(src, dest, StandardCopyOption.REPLACE_EXISTING);
+        } catch (IOException excp) {
+            throw new GitletException(excp.getMessage());
+        }
+
+    }
+
     /**
      * Copied from gitlet spec:
      * Takes the version of the file as it exists in the head commit and
@@ -363,62 +401,8 @@ public class Repository {
      */
     public static void checkoutFilename(String filename) {
         checkInitialize();
-        boolean findThisFileInCurrentCommit = false;
-        Commit commit = getCommitBySha1(getHeadCommitSha1());
-        for (String blobSha1 : commit.getBlobSha1List()) {
-            // recall that blob are stored like: .gitlet/blobs/40 bit sha1 value/hello.txt
-            File blobFile = getBlob(blobSha1);
-            if (blobFile.getName().equals(filename)) {
-                findThisFileInCurrentCommit = true;
-                Path src = blobFile.toPath();
-                Path dest = join(CWD, blobFile.getName()).toPath();
-                try {
-                    Files.copy(src, dest, StandardCopyOption.REPLACE_EXISTING);
-                } catch (IOException excp) {
-                    throw new GitletException(excp.getMessage());
-                }
-            }
-        }
-
-        if (!findThisFileInCurrentCommit) {
-            System.out.println("File does not exist in that commit.");
-        }
-    }
-
-    /**
-     * Copied from gitlet spec:
-     * Takes the version of the file as it exists in the commit with the given id,
-     * and puts it in the working directory, overwriting the version of the file
-     * that’s already there if there is one. The new version of the file is not staged.
-     */
-    public static void checkoutCommitAndFilename(String commitId, String filename) {
-        checkInitialize();
-        Commit commit = getCommitBySha1(getCompletedSha1(commitId));
-        if (commit == null) {
-            System.out.println("No commit with that id exists.");
-            System.exit(0);
-        }
-
-        boolean findThisFileInCurrentCommit = false;
-        for (String blobSha1 : commit.getBlobSha1List()) {
-            // recall that blob are stored like: .gitlet/blobs/40 bit sha1 value/hello.txt
-            File blobFile = getBlob(blobSha1);
-            if (blobFile.getName().equals(filename)) {
-                findThisFileInCurrentCommit = true;
-                Path src = blobFile.toPath();
-                Path dest = join(CWD, blobFile.getName()).toPath();
-                try {
-                    Files.copy(src, dest, StandardCopyOption.REPLACE_EXISTING);
-                } catch (IOException excp) {
-                    throw new GitletException(excp.getMessage());
-                }
-            }
-        }
-
-        if (!findThisFileInCurrentCommit) {
-            System.out.println("File does not exist in that commit.");
-        }
-
+        Commit headCommit = getCommitBySha1(getHeadCommitSha1());
+        checkoutCommitAndFilename(headCommit, filename);
     }
 
     /**
@@ -446,25 +430,27 @@ public class Repository {
             System.exit(0);
         }
 
-        String commitAtTargetBranchSha1 = readContentsAsString(targetBranchFile);
-        Commit commitAtTargetBranch = getCommitBySha1(commitAtTargetBranchSha1);
-        checkIfCWDFileWillBeOverwrittenByCommit(commitAtTargetBranch);
+        String targetCommitSha1 = readContentsAsString(targetBranchFile);
+        Commit targetCommit = getCommitBySha1(targetCommitSha1);
+        checkIfUntrackedFileWillBeOverwrittenByCommit(targetCommit);
 
         // Any files that are tracked in the current branch
         // but are not present in the checked-out branch are deleted.
-        Commit commitAtCurrentBranch = getCommitBySha1(getHeadCommitSha1());
-        List<String> filenamesInCurrCommit = getFilenamesInCommit(commitAtCurrentBranch);
-        List<String> filenamesInTargetCommit = getFilenamesInCommit(commitAtTargetBranch);
+        Commit currentCommit = getCommitBySha1(getHeadCommitSha1());
+        List<String> filenamesInCurrCommit = getFilenamesInCommit(currentCommit);
+        List<String> filenamesInTargetCommit = getFilenamesInCommit(targetCommit);
         for (String filenameInCurrCommit : filenamesInCurrCommit) {
             if (!filenamesInTargetCommit.contains(filenameInCurrCommit)) {
                 join(CWD, filenameInCurrCommit).delete();
             }
         }
 
-        for (String blobSha1 : commitAtTargetBranch.getBlobSha1List()) {
-            File file = getBlob(blobSha1);
-            Path src = file.toPath();
-            Path dest = join(CWD, file.getName()).toPath();
+        TreeMap<String, String> map = targetCommit.getMap();
+        for (String filename : map.keySet()) {
+            String fileSha1 = map.get(filename);
+            File blob = getBlob(fileSha1);
+            Path src = blob.toPath();
+            Path dest = join(CWD, filename).toPath();
             try {
                 Files.copy(src, dest, StandardCopyOption.REPLACE_EXISTING);
             } catch (IOException excp) {
@@ -473,7 +459,7 @@ public class Repository {
         }
 
         writeContents(GITLET_ACTIVE_BRANCH_FILE, targetBranchName);
-        writeContents(HEAD_FILE, commitAtTargetBranchSha1);
+        writeContents(HEAD_FILE, targetCommitSha1);
         deleteAllFilesInDir(GITLET_STAGE_FOR_ADD_DIR);
         deleteAllFilesInDir(GITLET_STAGE_FOR_REMOVE_DIR);
     }
@@ -555,7 +541,7 @@ public class Repository {
             System.exit(0);
         }
 
-        checkIfCWDFileWillBeOverwrittenByCommit(targetCommit);
+        checkIfUntrackedFileWillBeOverwrittenByCommit(targetCommit);
 
         Commit currentCommit = getCommitBySha1(getHeadCommitSha1());
         for (File CWDFile : CWD.listFiles()) {
@@ -597,7 +583,7 @@ public class Repository {
      * if we gonna switch to a certain commit, and that commit will overwrite
      * a file which is untracked by current commit, we will exit the entire program
      */
-    private static void checkIfCWDFileWillBeOverwrittenByCommit(Commit targetCommit) {
+    private static void checkIfUntrackedFileWillBeOverwrittenByCommit(Commit targetCommit) {
         List<String> filenamesInTargetCommit = getFilenamesInCommit(targetCommit);
         Commit currentCommit = getCommitBySha1(getHeadCommitSha1());
         List<String> filenamesInCurrCommit = getFilenamesInCommit(currentCommit);
@@ -662,7 +648,7 @@ public class Repository {
         checkIfStagedDirsAreEmpty();
 
         Commit commitAtTargetBranch = getCommitAtTargetBranch(targetBranchName);
-        checkIfCWDFileWillBeOverwrittenByCommit(commitAtTargetBranch);
+        checkIfUntrackedFileWillBeOverwrittenByCommit(commitAtTargetBranch);
 
     }
 
@@ -769,11 +755,7 @@ public class Repository {
     }
 
     private static String getHeadCommitSha1() {
-        String sha1 = readContentsAsString(HEAD_FILE);
-        if (sha1.equals("")) {
-            throw new GitletException("HEAD_FILE is empty");
-        }
-        return sha1;
+        return readContentsAsString(HEAD_FILE);
     }
 
     private static Commit getCommitBySha1(String commitSha1) {
