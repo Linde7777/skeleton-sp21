@@ -113,6 +113,11 @@ public class Main {
                 String commitId = args[1];
                 Repository.resetWithUncompletedCommitId(commitId);
                 break;
+            case "merge":
+                checkFuncArgumentLength(args,2);
+                String targetBranchName=args[1];
+                Repository.merge(targetBranchName);
+                break;
             default:
                 System.out.println("No command with that name exists.");
                 break;
