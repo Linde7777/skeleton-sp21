@@ -213,12 +213,10 @@ public class Repository {
     private static void setUpCommit(String message, String parentSha1) {
         checkCommitFailureCases();
         Commit commit = getCommitBySha1(getHeadCommitSha1());
-        assert commit != null;
         commit.modifyCommit(message, parentSha1,
                 GITLET_STAGE_FOR_ADD_DIR, GITLET_BLOBS_DIR, GITLET_STAGE_FOR_REMOVE_DIR);
         String commitSha1 = serializeCommit(commit);
         setupBranch(commitSha1);
-
         deleteAllFilesInDir(GITLET_STAGE_FOR_ADD_DIR);
         deleteAllFilesInDir(GITLET_STAGE_FOR_REMOVE_DIR);
     }
