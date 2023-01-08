@@ -615,8 +615,49 @@ public class Repository {
         mergeCase1(spiltPointCommit, currentCommit, targetCommit);
         mergeCase2(spiltPointCommit, currentCommit, targetCommit);
         mergeCase3(spiltPointCommit, currentCommit, targetCommit);
+        //mergeCase4(spiltPointCommit, currentCommit, targetCommit);
+        mergeCase5(spiltPointCommit, targetCommit);
+    }
 
+    /**
+     * Any files present at the split point, unmodified in the current
+     * branch, and absent in the given branch should be removed (and untracked).
+     */
+    private static void mergeCase6(Commit spiltPointCommit,
+                                   Commit currentCommit, Commit targetCommit){
 
+    }
+
+    /**
+     * Any files that were not present at the split point and
+     * are present only in the given branch should be checked out and staged.
+     */
+    private static void mergeCase5(Commit spiltPointCommit,
+                                   Commit targetCommit) {
+        TreeMap<String, String> spiltMap = spiltPointCommit.getMap();
+        TreeMap<String, String> targetMap = targetCommit.getMap();
+        for (String targetFilename : targetMap.keySet()) {
+            if (!spiltMap.containsKey(targetFilename)) {
+                checkoutCommitAndFilename(targetCommit, targetFilename);
+                Path src = join(CWD, targetFilename).toPath();
+                Path dest = join(GITLET_STAGE_FOR_ADD_DIR, targetFilename).toPath();
+                try {
+                    Files.copy(src, dest, StandardCopyOption.REPLACE_EXISTING);
+                } catch (IOException excp) {
+                    throw new GitletException(excp.getMessage());
+                }
+            }
+        }
+
+    }
+
+    /**
+     * Any files that were not present at the split point and are
+     * present only in the current branch should remain as they are.
+     */
+    private static void mergeCase4(Commit spiltPointCommit,
+                                   Commit currentCommit, Commit targetCommit) {
+        // we don't need to do anything
     }
 
     /**
@@ -640,6 +681,8 @@ public class Repository {
                 String spiltFileSha1 = spiltMap.get(targetFilename);
                 if (targetFileSha1.equals(currFileSha1) && !spiltFileSha1.equals(targetFileSha1)) {
                     // are left unchanged by the merge
+                    // i.e. we don't need to do anything
+                    // TODO: should I delete this function?
                 }
             }
 
