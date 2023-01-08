@@ -273,30 +273,17 @@ public class Repository {
 
         boolean findFileInCurrentCommit = false;
         Commit currentCommit = getCommitBySha1(getHeadCommitSha1());
-
-        // if currentCommit is null, it is ok, we don't need to do anything
-        // then we move down to check the next condition.
-        if (currentCommit != null) {
-            for (String currCommitBlobSha1 : currentCommit.getBlobSha1List()) {
-                File currCommitBlobFile = getBlobFile(currCommitBlobSha1);
-                if (currCommitBlobFile.getName().equals(filename)) {
-                    findFileInCurrentCommit = true;
-                    Path src = currCommitBlobFile.toPath();
-                    Path dest = join(GITLET_STAGE_FOR_REMOVE_DIR, filename).toPath();
-                    try {
-                        Files.copy(src, dest, StandardCopyOption.REPLACE_EXISTING);
-                    } catch (IOException excp) {
-                        throw new GitletException(excp.getMessage());
-                    }
-
-                    File file = join(CWD, filename);
-                    if (file.exists()) {
-                        file.delete();
-                    }
-                    // since we have found it, we don't need to search anymore
-                    break;
-                }
-
+        List<String> filenamesList = getFilenamesInCommit(currentCommit);
+        if (filenamesList.contains(targetFilename)) {
+            findFileInCurrentCommit = true;
+            String blobSha1 = currentCommit.getMap().get(targetFilename);
+            File blob = getBlob(blobSha1);
+            Path src = blob.toPath();
+            Path dest = join(GITLET_STAGE_FOR_REMOVE_DIR, targetFilename).toPath();
+            try {
+                Files.copy(src, dest, StandardCopyOption.REPLACE_EXISTING);
+            } catch (IOException excp) {
+                throw new GitletException(excp.getMessage());
             }
         }
 
