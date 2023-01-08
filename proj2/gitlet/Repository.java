@@ -432,6 +432,16 @@ public class Repository {
 
         String targetCommitSha1 = readContentsAsString(targetBranchFile);
         Commit targetCommit = getCommitBySha1(targetCommitSha1);
+
+        checkoutAllFilesInCommit(targetCommit);
+
+        writeContents(GITLET_ACTIVE_BRANCH_FILE, targetBranchName);
+        writeContents(HEAD_FILE, targetCommitSha1);
+        deleteAllFilesInDir(GITLET_STAGE_FOR_ADD_DIR);
+        deleteAllFilesInDir(GITLET_STAGE_FOR_REMOVE_DIR);
+    }
+
+    private static void checkoutAllFilesInCommit(Commit targetCommit) {
         checkIfUntrackedFileWillBeOverwrittenByCommit(targetCommit);
 
         // Any files that are tracked in the current branch
@@ -458,10 +468,6 @@ public class Repository {
             }
         }
 
-        writeContents(GITLET_ACTIVE_BRANCH_FILE, targetBranchName);
-        writeContents(HEAD_FILE, targetCommitSha1);
-        deleteAllFilesInDir(GITLET_STAGE_FOR_ADD_DIR);
-        deleteAllFilesInDir(GITLET_STAGE_FOR_REMOVE_DIR);
     }
 
     public static void status() {
@@ -530,42 +536,22 @@ public class Repository {
      * Removes tracked files that are not present in that commit.
      * Also moves the current branch’s head to that commit node.
      *
-     * @param commitId commitId can be abbreviated as for checkout
+     * @param uncompletedCommitId commitId can be abbreviated as for checkout
      */
-    public static void reset(String commitId) {
+    public static void resetWithUncompletedCommitId(String uncompletedCommitId) {
         checkInitialize();
-        String targetCommitId = getCompletedSha1(commitId);
+        String completedCommitId = getCompletedSha1(uncompletedCommitId);
+        resetWithCompletedCommitId(completedCommitId);
+    }
+
+    private static void resetWithCompletedCommitId(String targetCommitId) {
         Commit targetCommit = getCommitBySha1(targetCommitId);
         if (targetCommit == null) {
             System.out.println("No commit with that id exists.");
             System.exit(0);
         }
 
-        checkIfUntrackedFileWillBeOverwrittenByCommit(targetCommit);
-
-        Commit currentCommit = getCommitBySha1(getHeadCommitSha1());
-        for (File CWDFile : CWD.listFiles()) {
-            String CWDFileSha1 = sha1(readContents(CWDFile));
-            // if a CWDFile is tracked in currentCommit,
-            // but not in targetCommit, then we remove it
-            if (currentCommit.getBlobSha1List().contains(CWDFileSha1)
-                    && !targetCommit.getBlobSha1List().contains(CWDFileSha1)) {
-                CWDFile.delete();
-            }
-        }
-
-        // check out all the files in the targetCommit
-        for (String blobSha1 : targetCommit.getBlobSha1List()) {
-            File blobFile = getBlob(blobSha1);
-            Path src = blobFile.toPath();
-            Path dest = join(CWD, blobFile.getName()).toPath();
-            try {
-                Files.copy(src, dest, StandardCopyOption.REPLACE_EXISTING);
-            } catch (IOException excp) {
-                throw new GitletException(excp.getMessage());
-            }
-        }
-
+        checkoutAllFilesInCommit(targetCommit);
         // Also moves the current branch’s head to that commit node.
         writeContents(HEAD_FILE, targetCommitId);
         String theNameOfActiveBranch = readContentsAsString(GITLET_ACTIVE_BRANCH_FILE);
@@ -807,7 +793,8 @@ public class Repository {
         String completedSha1 = null;
         int len = commitId.length();
         if (commitId.length() < 2) {
-            throw new GitletException("The commit id must have at least 2 digits in length.");
+            System.out.println("No commit with that id exists.");
+            System.exit(0);
         }
         String firstTwoSha1 = commitId.substring(0, 2);
         File commitDir = join(GITLET_COMMITS_DIR, firstTwoSha1);
@@ -830,7 +817,8 @@ public class Repository {
                 // and now it found again, that means there are at least
                 // two files that are similar to commit id
                 if (foundAFileSimilarToCommitId) {
-                    throw new GitletException("commit id is not long enough to distinguish a commit");
+                    System.out.println("No commit with that id exists.");
+                    System.exit(0);
                 } else {
                     foundAFileSimilarToCommitId = true;
                     completedSha1 = filename;
