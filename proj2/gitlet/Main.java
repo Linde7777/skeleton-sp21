@@ -111,7 +111,7 @@ public class Main {
             case "reset":
                 checkFuncArgumentLength(args, 2);
                 String commitId = args[1];
-                Repository.reset(commitId);
+                Repository.resetWithUncompletedCommitId(commitId);
                 break;
             default:
                 System.out.println("No command with that name exists.");
