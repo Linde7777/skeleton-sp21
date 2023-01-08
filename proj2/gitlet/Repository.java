@@ -596,18 +596,64 @@ public class Repository {
         Commit currentCommit = getCommitBySha1(getHeadCommitSha1());
         Commit spiltPointCommit = getCommitAtSplitPoint(targetCommit, currentCommit);
 
-        if (commitAtSplitPoint == commitAtTargetBranch) {
+        if (spiltPointCommit == targetCommit) {
             System.out.println("Given branch is an ancestor of the current branch.");
             System.exit(0);
         }
-        if (commitAtSplitPoint == commitAtCurrentBranch) {
+        if (spiltPointCommit == currentCommit) {
             checkoutBranchName(targetBranchName);
             System.exit(0);
         }
 
+        List<String> filenamesAtSpiltPoint = getFilenamesInCommit(spiltPointCommit);
+        List<String> filenamesAtCurrCommit = getFilenamesInCommit(currentCommit);
+        List<String> filenamesAtTargetCommit = getFilenamesInCommit(targetCommit);
+        TreeMap<String, String> spiltMap = spiltPointCommit.getMap();
+        TreeMap<String, String> currMap = currentCommit.getMap();
+        TreeMap<String, String> targetMap = targetCommit.getMap();
+
+        mergeCase1(spiltPointCommit, currentCommit, targetCommit);
+        mergeCase2(spiltPointCommit, currentCommit, targetCommit);
+        mergeCase3(spiltPointCommit, currentCommit, targetCommit);
+
 
     }
 
+    /**
+     * Any files that have been modified in both the current and given
+     * branch in the same way (i.e., both files now have the same
+     * content or were both removed) are left unchanged by the merge.
+     * If a file was removed from both the current and given branch,
+     * but a file of the same name is present in the working directory,
+     * it is left alone and continues to be absent (not tracked nor staged) in the merge.
+     */
+    private static void mergeCase3(Commit spiltPointCommit,
+                                   Commit currentCommit, Commit targetCommit) {
+        TreeMap<String, String> spiltMap = spiltPointCommit.getMap();
+        TreeMap<String, String> currMap = currentCommit.getMap();
+        TreeMap<String, String> targetMap = targetCommit.getMap();
+        for (String targetFilename : targetMap.keySet()) {
+            if (spiltMap.containsKey(targetFilename) && currMap.containsKey(targetFilename)) {
+                //both be modified
+                String targetFileSha1 = targetMap.get(targetFilename);
+                String currFileSha1 = currMap.get(targetFilename);
+                String spiltFileSha1 = spiltMap.get(targetFilename);
+                if (targetFileSha1.equals(currFileSha1) && !spiltFileSha1.equals(targetFileSha1)) {
+                    // are left unchanged by the merge
+                }
+            }
+
+        }
+
+        for (String spiltFilename : spiltMap.keySet()) {
+            if (!targetMap.containsKey(spiltFilename) && !currMap.containsKey(spiltFilename)) {
+                // the file will be left alone and continues to be absent
+                // (not tracked nor staged) in the merge.
+                // i.e. do nothing
+                //TODO: should I delete this code?
+            }
+        }
+    }
 
     /**
      * Any files that have been modified in the current branch but
@@ -618,11 +664,11 @@ public class Repository {
         TreeMap<String, String> spiltMap = spiltPointCommit.getMap();
         TreeMap<String, String> currMap = currentCommit.getMap();
         TreeMap<String, String> targetMap = targetCommit.getMap();
-        for (String currFilename : currMap.keySet()) {
-            if (targetMap.containsKey(currFilename)) {
-                String currFileSha1 = currMap.get(currFilename);
-                String targetFileSha1 = targetMap.get(currFilename);
-                String spiltFileSha1 = spiltMap.get(currFilename);
+        for (String targetFilename : targetMap.keySet()) {
+            if (spiltMap.containsKey(targetFilename) && currMap.containsKey(targetFilename)) {
+                String currFileSha1 = currMap.get(targetFilename);
+                String targetFileSha1 = targetMap.get(targetFilename);
+                String spiltFileSha1 = spiltMap.get(targetFilename);
                 if (!currFileSha1.equals(spiltFileSha1) && targetFileSha1.equals(spiltFileSha1)) {
                     // TODO: should I delete this function?
                     // we do nothing
