@@ -557,7 +557,6 @@ public class Repository {
         String theNameOfActiveBranch = readContentsAsString(GITLET_ACTIVE_BRANCH_FILE);
         File activeBranchFile = join(GITLET_BRANCHES_DIR, theNameOfActiveBranch);
         writeContents(activeBranchFile, targetCommit);
-
         // you may ask here we modify HEAD_FILE, but why we don't modify ACTIVE_BRANCH_FILE?
         // recall that if HEAD is in branch_A, and then it points to branch_B, in this case we
         // need to modify ACTIVE_BRANCH_FILE,
@@ -604,11 +603,6 @@ public class Repository {
             System.exit(0);
         }
 
-        // case 1
-        for (String blobSha1 : commitAtTargetBranch.getBlobSha1List()) {
-            File blobFile = getBlob(blobSha1);
-
-        }
 
     }
 
@@ -692,22 +686,20 @@ public class Repository {
      */
     private static TreeMap<String, String> getModifiedButNotStagedFilesInCWD() {
 
-        TreeMap<String, String> map = new TreeMap<>();
-        //List<String> list = new ArrayList<>();
+        // filename->"modified"     filename->"deleted"
+        TreeMap<String, String> fileStateMap = new TreeMap<>();
+
         Commit currentCommit = getCommitBySha1(getHeadCommitSha1());
 
-        for (String blobSha1 : currentCommit.getBlobSha1List()) {
-            File blobFile = getBlob(blobSha1);
-            File CWDFileTrackedInCurrentCommit = join(CWD, blobFile.getName());
-            // if a file in CWD is tracked in the current commit
-            if (CWDFileTrackedInCurrentCommit.exists()) {
-                // and it is changed in the working directory
-                if (!sha1(readContentsAsString(CWDFileTrackedInCurrentCommit)).equals(blobSha1)) {
-                    // but it is not staged
-                    if (!join(GITLET_STAGE_FOR_ADD_DIR, blobFile.getName()).exists()
-                            || !join(GITLET_STAGE_FOR_REMOVE_DIR, blobFile.getName()).exists()) {
-                        map.put(blobFile.getName(), "modified");
-                    }
+        // Tracked in the current commit, changed in the working directory, but not staged
+        List<String> filenamesList = getFilenamesInCommit(currentCommit);
+        TreeMap<String, String> commitMap = currentCommit.getMap();
+        for (String filename : filenamesList) {
+            String trackedFileSha1 = commitMap.get(filename);
+            String CWDFileSha1 = sha1((Object) readContents(join(CWD, filename)));
+            if (!CWDFileSha1.equals(trackedFileSha1)) {
+                if (!join(GITLET_STAGE_FOR_ADD_DIR, filename).exists()) {
+                    fileStateMap.put(filename, "modified");
                 }
             }
         }
@@ -718,26 +710,24 @@ public class Repository {
                 // but with different contents than in the working directory
                 if (!sha1(readContentsAsString(file)).equals(
                         sha1(readContentsAsString(join(CWD, file.getName()))))) {
-                    map.put(file.getName(), "modified");
+                    fileStateMap.put(file.getName(), "modified");
                 }
             } else {
-                // if the "file in stagedForAddDir" is deleted
-                // in the working directory
-                map.put(file.getName(), "deleted");
+                // Staged for addition, but deleted in the working directory
+                fileStateMap.put(file.getName(), "deleted");
             }
         }
 
         // there is a file tracked in current commit, but it disappears in CWD,
         // and it is not in stageForRemoveDir
-        for (String blobSha1 : currentCommit.getBlobSha1List()) {
-            File blobFile = getBlob(blobSha1);
-            if (!join(CWD, blobFile.getName()).exists() &&
-                    !join(GITLET_STAGE_FOR_REMOVE_DIR, blobFile.getName()).exists()) {
-                map.put(blobFile.getName(), "deleted");
+        for (String filename : filenamesList) {
+            if (!join(CWD, filename).exists()
+                    && !join(GITLET_STAGE_FOR_REMOVE_DIR, filename).exists()) {
+                fileStateMap.put(filename,"deleted");
             }
         }
-        //Collections.sort(list);
-        return map;
+
+        return fileStateMap;
     }
 
     private static String getHeadCommitSha1() {
