@@ -901,7 +901,8 @@ public class Repository {
     private static Commit getCommitAtSplitPoint(Commit commit1, Commit commit2) {
         Commit p1 = commit1;
         Commit p2 = commit2;
-        while (!p1.equals(p2)) {
+        // timestamp is unique
+        while (!p1.getTimeStamp().equals(p2.getTimeStamp())) {
             p1 = (p1 != null ? getTheFirstParentOfGivenCommit(p1) : commit2);
             p2 = (p2 != null ? getTheFirstParentOfGivenCommit(p2) : commit1);
         }
