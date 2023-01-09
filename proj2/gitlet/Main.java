@@ -114,8 +114,8 @@ public class Main {
                 Repository.resetWithUncompletedCommitId(commitId);
                 break;
             case "merge":
-                checkFuncArgumentLength(args,2);
-                String targetBranchName=args[1];
+                checkFuncArgumentLength(args, 2);
+                String targetBranchName = args[1];
                 Repository.merge(targetBranchName);
                 break;
             default:
