@@ -623,20 +623,60 @@ public class Repository {
         mergeCase5(spiltPointCommit, targetCommit);
         mergeCase6(spiltPointCommit, currentCommit, targetCommit);
         //mergeCase7(spiltPointCommit, currentCommit, targetCommit);
+
     }
 
     /**
      * Any files modified in different ways in the current and given
      * branches are in conflict. "Modified in different ways" can mean
-     * that the contents of both are changed and different from other,
-     * or the contents of one are changed and the other file is deleted,
-     * or the file was absent at the split point and has different contents
+     * that
+     * 1. the contents of both are changed and different from other,
+     * 2. or the contents of one are changed and the other file is deleted,
+     * 3. or the file was absent at the split point and has different contents
      * in the given and current branches.
-     * In this case, replace the contents of the conflicted file with some
+     */
+    private static void checkMergeConflict(Commit spiltPointCommit,
+                                           Commit currentCommit, Commit targetCommit) {
+        TreeMap<String, String> spiltMap = spiltPointCommit.getMap();
+        TreeMap<String, String> currMap = currentCommit.getMap();
+        TreeMap<String, String> targetMap = targetCommit.getMap();
+        for (String targetFilename : targetMap.keySet()) {
+            if (currMap.containsKey(targetFilename) && spiltMap.containsKey(targetFilename)) {
+                String targetFileSha1 = targetMap.get(targetFilename);
+                String currFileSha1 = currMap.get(targetFilename);
+                String spiltFileSha1 = spiltMap.get(targetFilename);
+                //1. the contents of both are changed and different from other,
+                if (!currFileSha1.equals(spiltFileSha1) && !targetFileSha1.equals(spiltFileSha1)
+                        && !currFileSha1.equals(targetFileSha1)) {
+                    //TODO: maybe delete return value, and call dealWithMergeConflict()
+                    String contentsOfCurrFile = readContentsAsString(join(GITLET_BLOBS_DIR, currFileSha1));
+                    String contentsOfTargetFile = readContentsAsString(join(GITLET_BLOBS_DIR, targetFileSha1));
+                    String resultContent = "<<<<<<< HEAD\n" + contentsOfCurrFile
+                            + "=======" + contentsOfTargetFile + ">>>>>>>";
+                    File resultFile = join(CWD, targetFilename);
+                    writeContents(resultFile, resultContent);
+                }
+            }
+        }
+
+        //* 2. or the contents of one are changed and the other file is deleted(since spilt point)
+        //TODO: case 1:file exist in targetMap, absent in currMap
+        //case 2: file exist in currMap, absent in targetMap
+        for (String spiltFilename : spiltMap.keySet()) {
+        }
+
+    }
+
+    private static void concatContents(String content1, String content2, File resultFile) {
+
+    }
+
+    /**
+     * if there is a merge conflict, replace the contents of the conflicted file with some
      * certain symbols and words
      */
-    private static void mergeCase8(Commit spiltPointCommit,
-                                   Commit currentCommit, Commit targetCommit) {
+    private static void dealWithMergeConflict(Commit spiltPointCommit,
+                                              Commit currentCommit, Commit targetCommit) {
 
     }
 
