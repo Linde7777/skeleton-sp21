@@ -626,15 +626,11 @@ public class Repository {
         mergeCase7(spiltPointCommit, currentCommit, targetCommit);
         // in mergeConflict, the file will be overwritten, should I stage that file?
         // spec doesn't say staged it
-        boolean hasConflict = mergeConflict(spiltPointCommit, currentCommit, targetCommit);
+        mergeConflict(spiltPointCommit, currentCommit, targetCommit);
         String theNameOfTheActiveBranch = readContentsAsString(GITLET_ACTIVE_BRANCH_FILE);
-        if (!hasConflict) {
-            setUpCommit("Merged " + targetBranchName + " into " + theNameOfTheActiveBranch + ".");
-        } else {
-            setUpMergeConflictCommit("Merged " + targetBranchName
-                    + " into " + theNameOfTheActiveBranch + ".", getCommitSha1AtTargetBranch(targetBranchName));
-            System.out.println("Encountered a merge conflict.");
-        }
+        setUpMergeConflictCommit("Merged " + targetBranchName
+                + " into " + theNameOfTheActiveBranch + ".", getCommitSha1AtTargetBranch(targetBranchName));
+        System.out.println("Encountered a merge conflict.");
 
     }
 
@@ -660,10 +656,8 @@ public class Repository {
      * in the given and current branches.
      * in these cases, we need to replace the contents of the conflicted file with some
      * certain symbols and words
-     *
-     * @return return true if there is conflict
      */
-    private static boolean mergeConflict(Commit spiltPointCommit,
+    private static void mergeConflict(Commit spiltPointCommit,
                                          Commit currentCommit, Commit targetCommit) {
         boolean hasConflict = false;
         TreeMap<String, String> spiltMap = spiltPointCommit.getMap();
@@ -700,6 +694,7 @@ public class Repository {
                 }
             }
 
+            //TODO check this:
             // case 2: file exist and be modified in currMap, absent in targetMap
             if (!targetMap.containsKey(spiltFilename) && currMap.containsKey(spiltFilename)) {
                 String currFileSha1 = currMap.get(spiltFilename);
@@ -727,7 +722,6 @@ public class Repository {
             }
         }
 
-        return hasConflict;
     }
 
     private static void mergeConflictHelper(String contentOfCurrFile,
