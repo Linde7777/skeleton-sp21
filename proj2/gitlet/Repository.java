@@ -680,7 +680,7 @@ public class Repository {
                     hasConflict = true;
                     String contentsOfCurrFile = readContentsAsString(join(GITLET_BLOBS_DIR, currFileSha1));
                     String contentsOfTargetFile = readContentsAsString(join(GITLET_BLOBS_DIR, targetFileSha1));
-                    ConcatAndWriteContents(contentsOfCurrFile, contentsOfTargetFile, targetFilename);
+                    mergeConflictHelper(contentsOfCurrFile, contentsOfTargetFile, targetFilename);
                 }
             }
         }
@@ -696,7 +696,7 @@ public class Repository {
                     hasConflict = true;
                     String contentsOfCurrFile = "";
                     String contentsOfTargetFile = readContentsAsString(join(GITLET_BLOBS_DIR, targetFileSha1));
-                    ConcatAndWriteContents(contentsOfCurrFile, contentsOfTargetFile, spiltFilename);
+                    mergeConflictHelper(contentsOfCurrFile, contentsOfTargetFile, spiltFilename);
                 }
             }
 
@@ -707,7 +707,7 @@ public class Repository {
                     hasConflict = true;
                     String contentsOfCurrFile = readContentsAsString(join(GITLET_BLOBS_DIR, currFileSha1));
                     String contentsOfTargetFile = "";
-                    ConcatAndWriteContents(contentsOfCurrFile, contentsOfTargetFile, spiltFilename);
+                    mergeConflictHelper(contentsOfCurrFile, contentsOfTargetFile, spiltFilename);
                 }
             }
         }
@@ -722,7 +722,7 @@ public class Repository {
                     hasConflict = true;
                     String contentsOfCurrFile = readContentsAsString(join(GITLET_BLOBS_DIR, currFileSha1));
                     String contentsOfTargetFile = readContentsAsString(join(GITLET_BLOBS_DIR, targetFileSha1));
-                    ConcatAndWriteContents(contentsOfCurrFile, contentsOfTargetFile, targetFilename);
+                    mergeConflictHelper(contentsOfCurrFile, contentsOfTargetFile, targetFilename);
                 }
             }
         }
@@ -730,12 +730,13 @@ public class Repository {
         return hasConflict;
     }
 
-    private static void ConcatAndWriteContents(String contentOfCurrFile,
-                                               String contentOfTargetFile, String CWDFilename) {
+    private static void mergeConflictHelper(String contentOfCurrFile,
+                                            String contentOfTargetFile, String CWDFilename) {
         String resultContent = "<<<<<<< HEAD\n" + contentOfCurrFile
                 + "=======\n" + contentOfTargetFile + ">>>>>>>\n";
         File resultFile = join(CWD, CWDFilename);
         writeContents(resultFile, resultContent);
+        add(CWDFilename);
     }
 
     /**
