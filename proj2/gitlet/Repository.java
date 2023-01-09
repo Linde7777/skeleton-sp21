@@ -486,7 +486,7 @@ public class Repository {
         }
         System.out.println();
 
-        System.out.println("== Staged Files ===");
+        System.out.println("=== Staged Files ===");
         for (String filename : Objects.requireNonNull(plainFilenamesIn(GITLET_STAGE_FOR_ADD_DIR))) {
             System.out.println(filename);
         }
@@ -617,6 +617,35 @@ public class Repository {
         mergeCase3(spiltPointCommit, currentCommit, targetCommit);
         //mergeCase4(spiltPointCommit, currentCommit, targetCommit);
         mergeCase5(spiltPointCommit, targetCommit);
+        mergeCase6(spiltPointCommit, currentCommit, targetCommit);
+        //mergeCase7(spiltPointCommit, currentCommit, targetCommit);
+    }
+
+    /**
+     * Any files modified in different ways in the current and given
+     * branches are in conflict. "Modified in different ways" can mean
+     * that the contents of both are changed and different from other,
+     * or the contents of one are changed and the other file is deleted,
+     * or the file was absent at the split point and has different contents
+     * in the given and current branches.
+     * In this case, replace the contents of the conflicted file with some
+     * certain symbols and words
+     */
+    private static void mergeCase8(Commit spiltPointCommit,
+                                   Commit currentCommit, Commit targetCommit) {
+
+    }
+
+    /**
+     * Any files present at the split point, unmodified in the given branch,
+     * and absent in the current branch should remain absent.
+     */
+    private static void mergeCase7(Commit spiltPointCommit,
+                                   Commit currentCommit, Commit targetCommit) {
+        TreeMap<String, String> spiltMap = spiltPointCommit.getMap();
+        TreeMap<String, String> currMap = currentCommit.getMap();
+        TreeMap<String, String> targetMap = targetCommit.getMap();
+        // we don't need to do anything
     }
 
     /**
@@ -635,7 +664,6 @@ public class Repository {
                 if (currFileSha1.equals(spiltFileSha1)) {
                     remove(spiltFilename);
                 }
-
             }
         }
     }
