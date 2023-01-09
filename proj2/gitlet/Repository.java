@@ -634,6 +634,8 @@ public class Repository {
      * 2. or the contents of one are changed and the other file is deleted,
      * 3. or the file was absent at the split point and has different contents
      * in the given and current branches.
+     * in these cases, we need to replace the contents of the conflicted file with some
+     * certain symbols and words
      */
     private static void checkMergeConflict(Commit spiltPointCommit,
                                            Commit currentCommit, Commit targetCommit) {
@@ -648,27 +650,60 @@ public class Repository {
                 //1. the contents of both are changed and different from other,
                 if (!currFileSha1.equals(spiltFileSha1) && !targetFileSha1.equals(spiltFileSha1)
                         && !currFileSha1.equals(targetFileSha1)) {
-                    //TODO: maybe delete return value, and call dealWithMergeConflict()
                     String contentsOfCurrFile = readContentsAsString(join(GITLET_BLOBS_DIR, currFileSha1));
                     String contentsOfTargetFile = readContentsAsString(join(GITLET_BLOBS_DIR, targetFileSha1));
-                    String resultContent = "<<<<<<< HEAD\n" + contentsOfCurrFile
-                            + "=======" + contentsOfTargetFile + ">>>>>>>";
-                    File resultFile = join(CWD, targetFilename);
-                    writeContents(resultFile, resultContent);
+                    writeConcatContents(contentsOfCurrFile, contentsOfTargetFile, targetFilename);
                 }
             }
         }
 
-        //* 2. or the contents of one are changed and the other file is deleted(since spilt point)
-        //TODO: case 1:file exist in targetMap, absent in currMap
-        //case 2: file exist in currMap, absent in targetMap
+        // 2. or the contents of one are changed and the other file is deleted(since spilt point)
         for (String spiltFilename : spiltMap.keySet()) {
+            String spiltFileSha1 = spiltMap.get(spiltFilename);
+
+            // case 1:file exist and be modified in targetMap, absent in currMap
+            if (targetMap.containsKey(spiltFilename) && !currMap.containsKey(spiltFilename)) {
+                String targetFileSha1 = targetMap.get(spiltFilename);
+                if (!spiltFileSha1.equals(targetFileSha1)) {
+                    String contentsOfCurrFile = "";
+                    String contentsOfTargetFile = readContentsAsString(join(GITLET_BLOBS_DIR, targetFileSha1));
+                    writeConcatContents(contentsOfCurrFile, contentsOfTargetFile, spiltFilename);
+                }
+            }
+
+            // case 2: file exist and be modified in currMap, absent in targetMap
+            if (!targetMap.containsKey(spiltFilename) && currMap.containsKey(spiltFilename)) {
+                String currFileSha1 = currMap.get(spiltFilename);
+                if (!spiltFileSha1.equals(currFileSha1)) {
+                    String contentsOfCurrFile = readContentsAsString(join(GITLET_BLOBS_DIR, currFileSha1));
+                    String contentsOfTargetFile = "";
+                    writeConcatContents(contentsOfCurrFile, contentsOfTargetFile, spiltFilename);
+                    return;
+                }
+            }
         }
 
+        // 3. or the file was absent at the split point and has different contents
+        // in the given and current branches.
+        for (String targetFilename : targetMap.keySet()) {
+            if (currMap.containsKey(targetFilename) && !spiltMap.containsKey(targetFilename)) {
+                String currFileSha1 = currMap.get(targetFilename);
+                String targetFileSha1 = targetMap.get(targetFilename);
+                if (!targetFileSha1.equals(currFileSha1)) {
+                    String contentsOfCurrFile = readContentsAsString(join(GITLET_BLOBS_DIR, currFileSha1));
+                    String contentsOfTargetFile = readContentsAsString(join(GITLET_BLOBS_DIR, targetFileSha1));
+                    writeConcatContents(contentsOfCurrFile, contentsOfTargetFile, targetFilename);
+                }
+            }
+        }
     }
 
-    private static void concatContents(String content1, String content2, File resultFile) {
-
+    private static void writeConcatContents(String contentOfCurrFile,
+                                            String contentOfTargetFile, String CWDFilename) {
+        String resultContent = "<<<<<<< HEAD\n" + contentOfCurrFile
+                + "=======" + contentOfTargetFile + ">>>>>>>";
+        File resultFile = join(CWD, CWDFilename);
+        writeContents(resultFile, resultContent);
     }
 
     /**
