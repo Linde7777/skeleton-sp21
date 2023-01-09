@@ -733,7 +733,7 @@ public class Repository {
     private static void ConcatAndWriteContents(String contentOfCurrFile,
                                                String contentOfTargetFile, String CWDFilename) {
         String resultContent = "<<<<<<< HEAD\n" + contentOfCurrFile
-                + "=======" + contentOfTargetFile + ">>>>>>>";
+                + "=======\n" + contentOfTargetFile + ">>>>>>>";
         File resultFile = join(CWD, CWDFilename);
         writeContents(resultFile, resultContent);
     }
