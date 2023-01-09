@@ -175,7 +175,7 @@ public class Repository {
             System.exit(0);
         }
         checkInitialize();
-        checkIfStagedDirsAreEmpty();
+        checkIfStagedDirsAreAllEmpty();
         String HEADSha1 = getHeadCommitSha1();
         setUpCommit(message, HEADSha1);
     }
@@ -883,7 +883,7 @@ public class Repository {
             System.exit(0);
         }
 
-        checkIfStagedDirsAreEmpty();
+        //checkIfStagedDirsAreAllEmpty();
 
         Commit commitAtTargetBranch = getCommitAtTargetBranch(targetBranchName);
         checkIfUntrackedFileWillBeOverwrittenByCommit(commitAtTargetBranch);
@@ -901,7 +901,7 @@ public class Repository {
     private static Commit getCommitAtSplitPoint(Commit commit1, Commit commit2) {
         Commit p1 = commit1;
         Commit p2 = commit2;
-        while (p1 != p2) {
+        while (!p1.equals(p2)) {
             p1 = (p1 != null ? getTheFirstParentOfGivenCommit(p1) : commit2);
             p2 = (p2 != null ? getTheFirstParentOfGivenCommit(p2) : commit1);
         }
@@ -1011,7 +1011,7 @@ public class Repository {
         return join(GITLET_BLOBS_DIR, blobSha1);
     }
 
-    private static void checkIfStagedDirsAreEmpty() {
+    private static void checkIfStagedDirsAreAllEmpty() {
         if (Objects.requireNonNull(GITLET_STAGE_FOR_ADD_DIR.list()).length == 0
                 && Objects.requireNonNull(GITLET_STAGE_FOR_REMOVE_DIR.list()).length == 0) {
             System.out.println("No changes added to the commit.");
