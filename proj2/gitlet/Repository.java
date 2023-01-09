@@ -960,7 +960,11 @@ public class Repository {
             it might have problem to display weekday and month,
             because weekday and month in String will be other language(e.g. Chinese),
             and the terminal may have problem to display that.
-            you can try to run this program on Ubuntu
+
+            If you are a Windows 10 user, you can right-click "Time" in the lower
+            right corner of the screen, then click "Adjust Date/Time", and then click
+            the second "Region" in the left column to modify the region format and
+            change it to English
             */
     }
 
