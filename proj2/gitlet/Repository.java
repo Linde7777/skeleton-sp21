@@ -196,6 +196,7 @@ public class Repository {
      * @param parentSha1 the sha1 value of the parent commit
      */
     private static void setUpCommit(String message, String parentSha1) {
+        // clone a commit then modify it
         Commit commit = getCommitBySha1(getHeadCommitSha1());
         commit.modifyCommit(message, parentSha1,
                 GITLET_STAGE_FOR_ADD_DIR, GITLET_BLOBS_DIR, GITLET_STAGE_FOR_REMOVE_DIR);
@@ -600,11 +601,11 @@ public class Repository {
         Commit currentCommit = getCommitBySha1(getHeadCommitSha1());
         Commit spiltPointCommit = getCommitAtSplitPoint(targetCommit, currentCommit);
 
-        if (spiltPointCommit == targetCommit) {
+        if (spiltPointCommit.getTimeStamp().equals(targetCommit.getTimeStamp())) {
             System.out.println("Given branch is an ancestor of the current branch.");
             System.exit(0);
         }
-        if (spiltPointCommit == currentCommit) {
+        if (spiltPointCommit.getTimeStamp().equals(currentCommit.getTimeStamp())) {
             checkoutBranchName(targetBranchName);
             System.exit(0);
         }
@@ -617,16 +618,31 @@ public class Repository {
         TreeMap<String, String> targetMap = targetCommit.getMap();
 
         mergeCase1(spiltPointCommit, currentCommit, targetCommit);
-        mergeCase2(spiltPointCommit, currentCommit, targetCommit);
-        mergeCase3(spiltPointCommit, currentCommit, targetCommit);
-        mergeCase4(spiltPointCommit, currentCommit, targetCommit);
+        //mergeCase2(spiltPointCommit, currentCommit, targetCommit);
+        //mergeCase3(spiltPointCommit, currentCommit, targetCommit);
+        //mergeCase4(spiltPointCommit, currentCommit, targetCommit);
         mergeCase5(spiltPointCommit, targetCommit);
         mergeCase6(spiltPointCommit, currentCommit, targetCommit);
         mergeCase7(spiltPointCommit, currentCommit, targetCommit);
+        // in mergeConflict, the file will be overwritten, should I stage that file?
+        // spec doesn't say staged it
+        boolean hasConflict = mergeConflict(spiltPointCommit, currentCommit, targetCommit);
         String theNameOfTheActiveBranch = readContentsAsString(GITLET_ACTIVE_BRANCH_FILE);
-        setUpCommit("Merged " + targetBranchName + " into" + theNameOfTheActiveBranch + ".");
+        if (!hasConflict) {
+            setUpCommit("Merged " + targetBranchName + " into" + theNameOfTheActiveBranch + ".");
+        } else {
+            setUpMergeConflictCommit("Merged " + targetBranchName + " into" + theNameOfTheActiveBranch + ".");
+            System.out.println("Encountered a merge conflict.");
+        }
 
-        mergeConflict(spiltPointCommit,currentCommit,targetCommit);
+    }
+
+    /**
+     * Merge commits differ from other commits: they record as parents both the head
+     * of the current branch (called the first parent) and the head of the branch
+     * given on the command line to be merged in.
+     */
+    private static void setUpMergeConflictCommit(String message) {
 
     }
 
@@ -640,9 +656,12 @@ public class Repository {
      * in the given and current branches.
      * in these cases, we need to replace the contents of the conflicted file with some
      * certain symbols and words
+     *
+     * @return return true if there is conflict
      */
-    private static void mergeConflict(Commit spiltPointCommit,
-                                      Commit currentCommit, Commit targetCommit) {
+    private static boolean mergeConflict(Commit spiltPointCommit,
+                                         Commit currentCommit, Commit targetCommit) {
+        boolean hasConflict = false;
         TreeMap<String, String> spiltMap = spiltPointCommit.getMap();
         TreeMap<String, String> currMap = currentCommit.getMap();
         TreeMap<String, String> targetMap = targetCommit.getMap();
@@ -654,9 +673,10 @@ public class Repository {
                 //1. the contents of both are changed and different from other,
                 if (!currFileSha1.equals(spiltFileSha1) && !targetFileSha1.equals(spiltFileSha1)
                         && !currFileSha1.equals(targetFileSha1)) {
+                    hasConflict = true;
                     String contentsOfCurrFile = readContentsAsString(join(GITLET_BLOBS_DIR, currFileSha1));
                     String contentsOfTargetFile = readContentsAsString(join(GITLET_BLOBS_DIR, targetFileSha1));
-                    writeConcatContents(contentsOfCurrFile, contentsOfTargetFile, targetFilename);
+                    ConcatAndWriteContents(contentsOfCurrFile, contentsOfTargetFile, targetFilename);
                 }
             }
         }
@@ -669,9 +689,10 @@ public class Repository {
             if (targetMap.containsKey(spiltFilename) && !currMap.containsKey(spiltFilename)) {
                 String targetFileSha1 = targetMap.get(spiltFilename);
                 if (!spiltFileSha1.equals(targetFileSha1)) {
+                    hasConflict = true;
                     String contentsOfCurrFile = "";
                     String contentsOfTargetFile = readContentsAsString(join(GITLET_BLOBS_DIR, targetFileSha1));
-                    writeConcatContents(contentsOfCurrFile, contentsOfTargetFile, spiltFilename);
+                    ConcatAndWriteContents(contentsOfCurrFile, contentsOfTargetFile, spiltFilename);
                 }
             }
 
@@ -679,10 +700,10 @@ public class Repository {
             if (!targetMap.containsKey(spiltFilename) && currMap.containsKey(spiltFilename)) {
                 String currFileSha1 = currMap.get(spiltFilename);
                 if (!spiltFileSha1.equals(currFileSha1)) {
+                    hasConflict = true;
                     String contentsOfCurrFile = readContentsAsString(join(GITLET_BLOBS_DIR, currFileSha1));
                     String contentsOfTargetFile = "";
-                    writeConcatContents(contentsOfCurrFile, contentsOfTargetFile, spiltFilename);
-                    return;
+                    ConcatAndWriteContents(contentsOfCurrFile, contentsOfTargetFile, spiltFilename);
                 }
             }
         }
@@ -694,16 +715,19 @@ public class Repository {
                 String currFileSha1 = currMap.get(targetFilename);
                 String targetFileSha1 = targetMap.get(targetFilename);
                 if (!targetFileSha1.equals(currFileSha1)) {
+                    hasConflict = true;
                     String contentsOfCurrFile = readContentsAsString(join(GITLET_BLOBS_DIR, currFileSha1));
                     String contentsOfTargetFile = readContentsAsString(join(GITLET_BLOBS_DIR, targetFileSha1));
-                    writeConcatContents(contentsOfCurrFile, contentsOfTargetFile, targetFilename);
+                    ConcatAndWriteContents(contentsOfCurrFile, contentsOfTargetFile, targetFilename);
                 }
             }
         }
+
+        return hasConflict;
     }
 
-    private static void writeConcatContents(String contentOfCurrFile,
-                                            String contentOfTargetFile, String CWDFilename) {
+    private static void ConcatAndWriteContents(String contentOfCurrFile,
+                                               String contentOfTargetFile, String CWDFilename) {
         String resultContent = "<<<<<<< HEAD\n" + contentOfCurrFile
                 + "=======" + contentOfTargetFile + ">>>>>>>";
         File resultFile = join(CWD, CWDFilename);
@@ -903,6 +927,7 @@ public class Repository {
         Commit p2 = commit2;
         // timestamp is unique
         while (!p1.getTimeStamp().equals(p2.getTimeStamp())) {
+            // TODO: the case that p1 or p2 will be null
             p1 = (p1 != null ? getTheFirstParentOfGivenCommit(p1) : commit2);
             p2 = (p2 != null ? getTheFirstParentOfGivenCommit(p2) : commit1);
         }
@@ -914,7 +939,12 @@ public class Repository {
      * this function will return the first parent
      */
     private static Commit getTheFirstParentOfGivenCommit(Commit commit) {
-        String firstParentSha1 = commit.getParentSha1List().get(0);
+        String firstParentSha1;
+        if (commit.getParentSha1List().isEmpty()) {
+            firstParentSha1 = null;
+        } else {
+            firstParentSha1 = commit.getParentSha1List().get(0);
+        }
         return getCommitBySha1(firstParentSha1);
     }
 
@@ -998,6 +1028,14 @@ public class Repository {
     }
 
     private static Commit getCommitBySha1(String commitSha1) {
+        // the parentSha1 of initial commit is null
+        // when we put the parentSha1 into this function,
+        // we need to get null instead of throwing an exception,
+        // so that we will know we meet the first commit
+        if (commitSha1 == null) {
+            return null;
+        }
+
         if (commitSha1.length() < 40) {
             throw new GitletException("Commit Sha1 is too short");
         }
