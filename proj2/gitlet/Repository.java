@@ -619,10 +619,14 @@ public class Repository {
         mergeCase1(spiltPointCommit, currentCommit, targetCommit);
         mergeCase2(spiltPointCommit, currentCommit, targetCommit);
         mergeCase3(spiltPointCommit, currentCommit, targetCommit);
-        //mergeCase4(spiltPointCommit, currentCommit, targetCommit);
+        mergeCase4(spiltPointCommit, currentCommit, targetCommit);
         mergeCase5(spiltPointCommit, targetCommit);
         mergeCase6(spiltPointCommit, currentCommit, targetCommit);
-        //mergeCase7(spiltPointCommit, currentCommit, targetCommit);
+        mergeCase7(spiltPointCommit, currentCommit, targetCommit);
+        String theNameOfTheActiveBranch = readContentsAsString(GITLET_ACTIVE_BRANCH_FILE);
+        setUpCommit("Merged " + targetBranchName + " into" + theNameOfTheActiveBranch + ".");
+
+        mergeConflict(spiltPointCommit,currentCommit,targetCommit);
 
     }
 
@@ -637,8 +641,8 @@ public class Repository {
      * in these cases, we need to replace the contents of the conflicted file with some
      * certain symbols and words
      */
-    private static void checkMergeConflict(Commit spiltPointCommit,
-                                           Commit currentCommit, Commit targetCommit) {
+    private static void mergeConflict(Commit spiltPointCommit,
+                                      Commit currentCommit, Commit targetCommit) {
         TreeMap<String, String> spiltMap = spiltPointCommit.getMap();
         TreeMap<String, String> currMap = currentCommit.getMap();
         TreeMap<String, String> targetMap = targetCommit.getMap();
@@ -704,15 +708,6 @@ public class Repository {
                 + "=======" + contentOfTargetFile + ">>>>>>>";
         File resultFile = join(CWD, CWDFilename);
         writeContents(resultFile, resultContent);
-    }
-
-    /**
-     * if there is a merge conflict, replace the contents of the conflicted file with some
-     * certain symbols and words
-     */
-    private static void dealWithMergeConflict(Commit spiltPointCommit,
-                                              Commit currentCommit, Commit targetCommit) {
-
     }
 
     /**
