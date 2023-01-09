@@ -554,6 +554,10 @@ public class Repository {
         }
 
         checkoutAllFilesInCommit(targetCommit);
+
+        deleteAllFilesInDir(GITLET_STAGE_FOR_ADD_DIR);
+        deleteAllFilesInDir(GITLET_STAGE_FOR_REMOVE_DIR);
+
         // Also moves the current branch’s head to that commit node.
         writeContents(HEAD_FILE, targetCommitId);
         String theNameOfActiveBranch = readContentsAsString(GITLET_ACTIVE_BRANCH_FILE);
