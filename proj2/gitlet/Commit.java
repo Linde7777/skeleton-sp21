@@ -82,14 +82,13 @@ public class Commit implements Serializable {
      * It may remove some filename->fileSha1 mapping,
      * since in the new commit some files in parent commit will be untracked
      */
-    public void modifyCommit(String message, String parentSha1,
+    public void modifyCommit(String message, LinkedList<String> parentSha1List,
                              File stagedForAddDir, File blobsDir, File stagedForRemoveDir) {
         this.message = message;
         this.timeStamp = new Date();
         // this.parentSha1List is copied from its parent,
         // it needs to be flushed
-        this.parentSha1List = new LinkedList<>();
-        this.parentSha1List.add(parentSha1);
+        this.parentSha1List = parentSha1List;
         try {
             addBlobsToCommit(stagedForAddDir, blobsDir);
             removeBlobsFromCommit(stagedForRemoveDir);

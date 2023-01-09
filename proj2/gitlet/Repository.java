@@ -177,7 +177,9 @@ public class Repository {
         checkInitialize();
         checkIfStagedDirsAreAllEmpty();
         String HEADSha1 = getHeadCommitSha1();
-        setUpCommit(message, HEADSha1);
+        LinkedList<String> parentSha1List = new LinkedList<>();
+        parentSha1List.add(HEADSha1);
+        setUpCommit(message, parentSha1List);
     }
 
     /**
@@ -191,14 +193,12 @@ public class Repository {
      * We initialize a Commit, whose sha1 value is a154ccd,
      * then we will serialize this commit, this serialized file
      * will be named after a154ccd, then we put it in .gitlet/commits
-     *
-     * @param message    the message of this commit
-     * @param parentSha1 the sha1 value of the parent commit
      */
-    private static void setUpCommit(String message, String parentSha1) {
+    private static void setUpCommit(String message, LinkedList<String> parentSha1List) {
         // clone a commit then modify it
         Commit commit = getCommitBySha1(getHeadCommitSha1());
-        commit.modifyCommit(message, parentSha1,
+        // usually a commit only have one parent
+        commit.modifyCommit(message, parentSha1List,
                 GITLET_STAGE_FOR_ADD_DIR, GITLET_BLOBS_DIR, GITLET_STAGE_FOR_REMOVE_DIR);
         String commitSha1 = serializeCommit(commit);
         setupBranch(commitSha1);
@@ -631,7 +631,8 @@ public class Repository {
         if (!hasConflict) {
             setUpCommit("Merged " + targetBranchName + " into" + theNameOfTheActiveBranch + ".");
         } else {
-            setUpMergeConflictCommit("Merged " + targetBranchName + " into" + theNameOfTheActiveBranch + ".");
+            setUpMergeConflictCommit("Merged " + targetBranchName
+                    + " into" + theNameOfTheActiveBranch + ".", getCommitSha1AtTargetBranch(targetBranchName));
             System.out.println("Encountered a merge conflict.");
         }
 
@@ -642,8 +643,11 @@ public class Repository {
      * of the current branch (called the first parent) and the head of the branch
      * given on the command line to be merged in.
      */
-    private static void setUpMergeConflictCommit(String message) {
-
+    private static void setUpMergeConflictCommit(String message, String secondParentSha1) {
+        LinkedList<String> parentSha1List = new LinkedList<>();
+        parentSha1List.add(getHeadCommitSha1());
+        parentSha1List.add(secondParentSha1);
+        setUpCommit(message, parentSha1List);
     }
 
     /**
@@ -915,8 +919,12 @@ public class Repository {
     }
 
     private static Commit getCommitAtTargetBranch(String targetBranchName) {
+        return getCommitBySha1(getCommitSha1AtTargetBranch(targetBranchName));
+    }
+
+    private static String getCommitSha1AtTargetBranch(String targetBranchName) {
         File targetBranchFile = join(GITLET_BRANCHES_DIR, targetBranchName);
-        return getCommitBySha1(readContentsAsString(targetBranchFile));
+        return readContentsAsString(targetBranchFile);
     }
 
     /**
