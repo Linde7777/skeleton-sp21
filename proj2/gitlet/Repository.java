@@ -986,7 +986,8 @@ public class Repository {
         File commitDir = join(GITLET_COMMITS_DIR, firstTwoSha1);
         List<String> filenamesInCommitDir = plainFilenamesIn(commitDir);
         if (filenamesInCommitDir == null) {
-            return null;
+            System.out.println("No commit with that id exists.");
+            System.exit(0);
         }
 
         /*
