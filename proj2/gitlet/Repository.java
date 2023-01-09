@@ -629,10 +629,10 @@ public class Repository {
         boolean hasConflict = mergeConflict(spiltPointCommit, currentCommit, targetCommit);
         String theNameOfTheActiveBranch = readContentsAsString(GITLET_ACTIVE_BRANCH_FILE);
         if (!hasConflict) {
-            setUpCommit("Merged " + targetBranchName + " into" + theNameOfTheActiveBranch + ".");
+            setUpCommit("Merged " + targetBranchName + " into " + theNameOfTheActiveBranch + ".");
         } else {
             setUpMergeConflictCommit("Merged " + targetBranchName
-                    + " into" + theNameOfTheActiveBranch + ".", getCommitSha1AtTargetBranch(targetBranchName));
+                    + " into " + theNameOfTheActiveBranch + ".", getCommitSha1AtTargetBranch(targetBranchName));
             System.out.println("Encountered a merge conflict.");
         }
 
