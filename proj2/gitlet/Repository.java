@@ -558,7 +558,7 @@ public class Repository {
         writeContents(HEAD_FILE, targetCommitId);
         String theNameOfActiveBranch = readContentsAsString(GITLET_ACTIVE_BRANCH_FILE);
         File activeBranchFile = join(GITLET_BRANCHES_DIR, theNameOfActiveBranch);
-        writeContents(activeBranchFile, targetCommit);
+        writeContents(activeBranchFile, targetCommitId);
         // you may ask here we modify HEAD_FILE, but why we don't modify ACTIVE_BRANCH_FILE?
         // recall that if HEAD is in branch_A, and then it points to branch_B, in this case we
         // need to modify ACTIVE_BRANCH_FILE,
