@@ -810,7 +810,9 @@ public class Repository {
         TreeMap<String, String> commitMap = commit.getMap();
         if (!commitMap.containsKey(filename)) {
             //TODO: or just "" ?
-            return "\r\n";
+            //TODO: bug is in here, test34 does not meet the case that a file is empty
+            // but test35 say the content of merged file is wrong
+            return System.getProperty("line.separator");
         } else {
             String sha1 = commitMap.get(filename);
             return readContentsAsString(getBlob(sha1));
