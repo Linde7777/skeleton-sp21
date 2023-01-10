@@ -656,7 +656,7 @@ public class Repository {
      * certain symbols and words
      */
     private static void mergeConflict(Commit spiltPointCommit,
-                                         Commit currentCommit, Commit targetCommit) {
+                                      Commit currentCommit, Commit targetCommit) {
         boolean hasConflict = false;
         TreeMap<String, String> spiltMap = spiltPointCommit.getMap();
         TreeMap<String, String> currMap = currentCommit.getMap();
@@ -730,6 +730,112 @@ public class Repository {
         writeContents(resultFile, resultContent);
         add(CWDFilename);
     }
+
+    /*TODO: all these cases, it seems like it is just take the newest version of file to the result
+    compare HEAD with spilt point, if it is not the same
+    (when we say "not the same", it is: content is different or in one of them the file does not exist
+    when we say "same", it is: content is same or in both of them the file does not exist)
+    set HEADIsTheNewest as true, same we do to targetBranch,
+    then we get the result from the newest commit
+    if HEADIsTheNewest and targetIsTheNewest are both true, we get into the case of conflict
+
+    compare the result to HEAD, so we can determine to perform add() or remove()
+     */
+    private static void checkMergeCases(Commit spiltPointCommit,
+                                        Commit currentCommit, Commit targetCommit) {
+
+        TreeMap<String, String> spiltMap = spiltPointCommit.getMap();
+        TreeMap<String, String> currMap = currentCommit.getMap();
+        TreeMap<String, String> targetMap = targetCommit.getMap();
+        List<String> filenamesAtSpiltPoint = getFilenamesInCommit(spiltPointCommit);
+        List<String> filenamesAtCurrCommit = getFilenamesInCommit(currentCommit);
+        List<String> filenamesAtTargetCommit = getFilenamesInCommit(targetCommit);
+        List<String> allFilenamesList = mergeThreeListIntoOne(filenamesAtSpiltPoint,
+                filenamesAtCurrCommit, filenamesAtTargetCommit);
+        for (String filename : allFilenamesList) {
+            boolean targetFileIsTheNewest =
+                    checkIfFileInGivenCommitIsTheNewest(filename, targetCommit, spiltPointCommit);
+            boolean currFileIsTheNewest =
+                    checkIfFileInGivenCommitIsTheNewest(filename, currentCommit, spiltPointCommit);
+
+            if (targetFileIsTheNewest && !currFileIsTheNewest) {
+                // let's say a file with name "A" exist in spiltPointCommit,
+                // meanwhile a file name "A" is absent in targetCommit,
+                // and a file name "A" exist in currentCommit,
+                // that is: the file name "A" in the targetCommit(null) is the
+                // newest version of the file.
+                // since the newest version of the file is null,
+                // we should remove the file with name "A"
+                if (targetMap.containsKey(filename)) {
+                    add(filename);
+                } else {
+                    remove(filename);
+                }
+            } else if (currFileIsTheNewest && !targetFileIsTheNewest) {
+                if (currMap.containsKey(filename)) {
+                    add(filename);
+                } else {
+                    remove(filename);
+                }
+            } else if (currFileIsTheNewest) {
+                // if they are both the newest, we meet conflict
+                String contentsOfTargetFile = getContentsOfFile(targetCommit, filename);
+                String contentsOfCurrFile = getContentsOfFile(currentCommit, filename);
+                String resultContent = "<<<<<<< HEAD\n" + contentsOfCurrFile
+                        + "=======\n" + contentsOfTargetFile + ">>>>>>>\n";
+                File resultFile = join(CWD, filename);
+                writeContents(resultFile, resultContent);
+                add(filename);
+            }
+
+        }
+
+    }
+
+    /**
+     * get the content of the file in a commit.
+     * if the file does not exist in that commit, return empty string.
+     */
+    private static String getContentsOfFile(Commit commit, String filename) {
+        TreeMap<String, String> commitMap = commit.getMap();
+        if (!commitMap.containsKey(filename)) {
+            //TODO: or just "" ?
+            return "\r\n";
+        } else {
+            String sha1 = commitMap.get(filename);
+            return readContentsAsString(getBlob(sha1));
+        }
+    }
+
+    private static List<String> mergeThreeListIntoOne(List<String> list1,
+                                                      List<String> list2, List<String> list3) {
+        Set<String> set = new HashSet<>();
+        set.addAll(list1);
+        set.addAll(list2);
+        set.addAll(list3);
+        return new ArrayList<>(set);
+    }
+
+    // same: content is same or in both of them the file does not exist, return false
+    // not the same: content is different or in one of them the file does not exist
+    private static boolean checkIfFileInGivenCommitIsTheNewest(String filename, Commit givenCommit, Commit spiltPointCommit) {
+        TreeMap<String, String> givenMap = givenCommit.getMap();
+        TreeMap<String, String> spiltMap = spiltPointCommit.getMap();
+        if (!givenMap.containsKey(filename) && !spiltMap.containsKey(filename)) {
+            return false;
+        }
+
+        if (givenMap.containsKey(filename) && spiltMap.containsKey(filename)) {
+            String givenFileSha1 = givenMap.get(filename);
+            String spiltFileSha1 = spiltMap.get(filename);
+            if (givenFileSha1.equals(spiltFileSha1)) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
 
     /**
      * Any files present at the split point, unmodified in the given branch,
@@ -860,6 +966,7 @@ public class Repository {
      * but not modified in the current branch since the split point should be changed
      * to their versions in the given branch (checked out from the commit at the
      * front of the given branch). These files should then all be automatically staged.
+     * TODO: (staged for add or remove)
      */
     private static void mergeCase1(Commit spiltPointCommit,
                                    Commit currentCommit, Commit targetCommit) {
