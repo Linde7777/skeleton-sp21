@@ -609,6 +609,7 @@ public class Repository {
         }
 
 
+        /*
         mergeCase1(spiltPointCommit, currentCommit, targetCommit);
         //mergeCase2(spiltPointCommit, currentCommit, targetCommit);
         //mergeCase3(spiltPointCommit, currentCommit, targetCommit);
@@ -619,10 +620,14 @@ public class Repository {
         // in mergeConflict, the file will be overwritten, should I stage that file?
         // spec doesn't say staged it
         mergeConflict(spiltPointCommit, currentCommit, targetCommit);
+         */
+        boolean hasMergeConflict = checkMergeCases(spiltPointCommit, currentCommit, targetCommit);
         String theNameOfTheActiveBranch = readContentsAsString(GITLET_ACTIVE_BRANCH_FILE);
         setUpMergeConflictCommit("Merged " + targetBranchName
                 + " into " + theNameOfTheActiveBranch + ".", getCommitSha1AtTargetBranch(targetBranchName));
-        System.out.println("Encountered a merge conflict.");
+        if (hasMergeConflict) {
+            System.out.println("Encountered a merge conflict.");
+        }
 
     }
 
@@ -650,7 +655,7 @@ public class Repository {
      * certain symbols and words
      */
     private static void mergeConflict(Commit spiltPointCommit,
-                                      Commit currentCommit, Commit targetCommit) {
+                                         Commit currentCommit, Commit targetCommit) {
         boolean hasConflict = false;
         TreeMap<String, String> spiltMap = spiltPointCommit.getMap();
         TreeMap<String, String> currMap = currentCommit.getMap();
@@ -735,8 +740,9 @@ public class Repository {
 
     compare the result to HEAD, so we can determine to perform add() or remove()
      */
-    private static void checkMergeCases(Commit spiltPointCommit,
-                                        Commit currentCommit, Commit targetCommit) {
+    private static boolean checkMergeCases(Commit spiltPointCommit,
+                                           Commit currentCommit, Commit targetCommit) {
+        boolean hasMergeConflict = false;
         List<String> filenamesAtSpiltPoint = getFilenamesInCommit(spiltPointCommit);
         List<String> filenamesAtCurrCommit = getFilenamesInCommit(currentCommit);
         List<String> filenamesAtTargetCommit = getFilenamesInCommit(targetCommit);
@@ -755,6 +761,7 @@ public class Repository {
                 updateContentsAndStage(currentCommit, filename);
             } else if (currFileIsTheNewest) {
                 // if they are both the newest, we meet conflict
+                hasMergeConflict = true;
                 String contentsOfTargetFile = getContentsOfFile(targetCommit, filename);
                 String contentsOfCurrFile = getContentsOfFile(currentCommit, filename);
                 String resultContent = "<<<<<<< HEAD\n" + contentsOfCurrFile
@@ -765,6 +772,7 @@ public class Repository {
             }
         }
 
+        return hasMergeConflict;
     }
 
     /**
