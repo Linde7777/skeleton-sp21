@@ -812,7 +812,8 @@ public class Repository {
             //TODO: or just "" ?
             //TODO: bug is in here, test34 does not meet the case that a file is empty
             // but test35 say the content of merged file is wrong
-            return System.getProperty("line.separator");
+            //return System.getProperty("line.separator");
+            return "";
         } else {
             String sha1 = commitMap.get(filename);
             return readContentsAsString(getBlob(sha1));
