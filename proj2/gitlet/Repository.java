@@ -608,12 +608,6 @@ public class Repository {
             System.exit(0);
         }
 
-        List<String> filenamesAtSpiltPoint = getFilenamesInCommit(spiltPointCommit);
-        List<String> filenamesAtCurrCommit = getFilenamesInCommit(currentCommit);
-        List<String> filenamesAtTargetCommit = getFilenamesInCommit(targetCommit);
-        TreeMap<String, String> spiltMap = spiltPointCommit.getMap();
-        TreeMap<String, String> currMap = currentCommit.getMap();
-        TreeMap<String, String> targetMap = targetCommit.getMap();
 
         mergeCase1(spiltPointCommit, currentCommit, targetCommit);
         //mergeCase2(spiltPointCommit, currentCommit, targetCommit);
@@ -743,15 +737,12 @@ public class Repository {
      */
     private static void checkMergeCases(Commit spiltPointCommit,
                                         Commit currentCommit, Commit targetCommit) {
-
-        TreeMap<String, String> spiltMap = spiltPointCommit.getMap();
-        TreeMap<String, String> currMap = currentCommit.getMap();
-        TreeMap<String, String> targetMap = targetCommit.getMap();
         List<String> filenamesAtSpiltPoint = getFilenamesInCommit(spiltPointCommit);
         List<String> filenamesAtCurrCommit = getFilenamesInCommit(currentCommit);
         List<String> filenamesAtTargetCommit = getFilenamesInCommit(targetCommit);
         List<String> allFilenamesList = mergeThreeListIntoOne(filenamesAtSpiltPoint,
                 filenamesAtCurrCommit, filenamesAtTargetCommit);
+
         for (String filename : allFilenamesList) {
             boolean targetFileIsTheNewest =
                     checkIfFileInGivenCommitIsTheNewest(filename, targetCommit, spiltPointCommit);
@@ -759,24 +750,9 @@ public class Repository {
                     checkIfFileInGivenCommitIsTheNewest(filename, currentCommit, spiltPointCommit);
 
             if (targetFileIsTheNewest && !currFileIsTheNewest) {
-                // let's say a file with name "A" exist in spiltPointCommit,
-                // meanwhile a file name "A" is absent in targetCommit,
-                // and a file name "A" exist in currentCommit,
-                // that is: the file name "A" in the targetCommit(null) is the
-                // newest version of the file.
-                // since the newest version of the file is null,
-                // we should remove the file with name "A"
-                if (targetMap.containsKey(filename)) {
-                    add(filename);
-                } else {
-                    remove(filename);
-                }
+                updateContentsAndStage(targetCommit, filename);
             } else if (currFileIsTheNewest && !targetFileIsTheNewest) {
-                if (currMap.containsKey(filename)) {
-                    add(filename);
-                } else {
-                    remove(filename);
-                }
+                updateContentsAndStage(currentCommit, filename);
             } else if (currFileIsTheNewest) {
                 // if they are both the newest, we meet conflict
                 String contentsOfTargetFile = getContentsOfFile(targetCommit, filename);
@@ -787,9 +763,30 @@ public class Repository {
                 writeContents(resultFile, resultContent);
                 add(filename);
             }
-
         }
 
+    }
+
+    /**
+     * @param commit should be the only commit that contain the newest version of file
+     */
+    private static void updateContentsAndStage(Commit commit, String filename) {
+        // let's say a file with name "A" exist in spiltPointCommit,
+        // meanwhile a file name "A" is absent in targetCommit,
+        // and a file name "A" exist in currentCommit,
+        // that is: the file name "A" in the targetCommit(null) is the
+        // newest version of the file.
+        // since the newest version of the file is null,
+        // we should remove the file with name "A"
+        TreeMap<String, String> commitMap = commit.getMap();
+        if (commitMap.containsKey(filename)) {
+            File theNewestVersionOfFile = getBlob(commitMap.get(filename));
+            writeContents(join(CWD, filename), readContentsAsString(theNewestVersionOfFile));
+            add(filename);
+        } else {
+            // remove() will delete it, so we don't need to delete it here
+            remove(filename);
+        }
     }
 
     /**
@@ -807,6 +804,9 @@ public class Repository {
         }
     }
 
+    /**
+     * with no duplicate element
+     */
     private static List<String> mergeThreeListIntoOne(List<String> list1,
                                                       List<String> list2, List<String> list3) {
         Set<String> set = new HashSet<>();
