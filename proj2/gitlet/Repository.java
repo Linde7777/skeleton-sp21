@@ -655,7 +655,7 @@ public class Repository {
      * certain symbols and words
      */
     private static void mergeConflict(Commit spiltPointCommit,
-                                         Commit currentCommit, Commit targetCommit) {
+                                      Commit currentCommit, Commit targetCommit) {
         boolean hasConflict = false;
         TreeMap<String, String> spiltMap = spiltPointCommit.getMap();
         TreeMap<String, String> currMap = currentCommit.getMap();
@@ -792,8 +792,13 @@ public class Repository {
             writeContents(join(CWD, filename), readContentsAsString(theNewestVersionOfFile));
             add(filename);
         } else {
-            // remove() will delete it, so we don't need to delete it here
-            remove(filename);
+            // let's say currentCommit is the only commit that has the newest version of file,
+            // and the file is null,
+            // in this case the file does not exist in currentCommit,
+            // we don't need to call remove()
+            if (join(CWD, filename).exists()) {
+                remove(filename);
+            }
         }
     }
 
