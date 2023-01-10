@@ -765,7 +765,7 @@ public class Repository {
                 String contentsOfTargetFile = getContentsOfFile(targetCommit, filename);
                 String contentsOfCurrFile = getContentsOfFile(currentCommit, filename);
                 String resultContent = "<<<<<<< HEAD\n" + contentsOfCurrFile
-                        + "=======\n" + contentsOfTargetFile + ">>>>>>>\n";
+                        + "\n=======\n" + contentsOfTargetFile + ">>>>>>>\n";
                 File resultFile = join(CWD, filename);
                 writeContents(resultFile, resultContent);
                 add(filename);
