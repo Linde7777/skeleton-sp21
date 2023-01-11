@@ -175,7 +175,7 @@ public class Repository {
         checkInitialize();
         checkIfStagedDirsAreAllEmpty();
         String HEADSha1 = getHeadCommitSha1();
-        LinkedList<String> parentSha1List = new LinkedList<>();
+        List<String> parentSha1List = new ArrayList<>();
         parentSha1List.add(HEADSha1);
         setUpCommit(message, parentSha1List);
     }
@@ -192,10 +192,9 @@ public class Repository {
      * then we will serialize this commit, this serialized file
      * will be named after a154ccd, then we put it in .gitlet/commits
      */
-    private static void setUpCommit(String message, LinkedList<String> parentSha1List) {
+    private static void setUpCommit(String message, List<String> parentSha1List) {
         // clone a commit then modify it
         Commit commit = getCommitBySha1(getHeadCommitSha1());
-        // usually a commit only have one parent
         commit.modifyCommit(message, parentSha1List,
                 GITLET_STAGE_FOR_ADD_DIR, GITLET_BLOBS_DIR, GITLET_STAGE_FOR_REMOVE_DIR);
         String commitSha1 = serializeCommit(commit);
@@ -637,7 +636,7 @@ public class Repository {
      * given on the command line to be merged in.
      */
     private static void setUpMergeConflictCommit(String message, String secondParentSha1) {
-        LinkedList<String> parentSha1List = new LinkedList<>();
+        List<String> parentSha1List = new ArrayList<>();
         parentSha1List.add(getHeadCommitSha1());
         parentSha1List.add(secondParentSha1);
         setUpCommit(message, parentSha1List);
@@ -1047,6 +1046,7 @@ public class Repository {
      * This is similar to find the latest common ancestor of two linked-list
      */
     private static Commit getCommitAtSplitPoint(Commit commit1, Commit commit2) {
+        //TODO: bug here, it is not a linked-list, it is a graph
         Commit p1 = commit1;
         Commit p2 = commit2;
         // timestamp is unique
@@ -1057,6 +1057,7 @@ public class Repository {
         }
         return p1;
     }
+
 
     /**
      * commit can have more than one parent,

@@ -8,10 +8,7 @@ import java.io.Serializable;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
-import java.util.Date;
-import java.util.LinkedList;
-import java.util.Objects;
-import java.util.TreeMap;
+import java.util.*;
 
 import static gitlet.Utils.*;
 
@@ -53,9 +50,9 @@ public class Commit implements Serializable {
     /**
      * where store the sha1 values of parents of this commit
      */
-    private LinkedList<String> parentSha1List;
+    private List<String> parentSha1List;
 
-    public LinkedList<String> getParentSha1List() {
+    public List<String> getParentSha1List() {
         return parentSha1List;
     }
 
@@ -72,7 +69,7 @@ public class Commit implements Serializable {
         this.timeStamp = new Date(0);
         this.message = message;
         this.map = new TreeMap<>();
-        this.parentSha1List = new LinkedList<>();
+        this.parentSha1List = new ArrayList<>();
     }
 
     /**
@@ -82,7 +79,7 @@ public class Commit implements Serializable {
      * It may remove some filename->fileSha1 mapping,
      * since in the new commit some files in parent commit will be untracked
      */
-    public void modifyCommit(String message, LinkedList<String> parentSha1List,
+    public void modifyCommit(String message, List<String> parentSha1List,
                              File stagedForAddDir, File blobsDir, File stagedForRemoveDir) {
         this.message = message;
         this.timeStamp = new Date();
