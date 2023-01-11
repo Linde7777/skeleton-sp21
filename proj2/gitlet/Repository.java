@@ -257,13 +257,12 @@ public class Repository {
     public static void remove(String targetFilename) {
         checkInitialize();
         boolean findFileInStageForAddDir = false;
-        File[] filesInStageForAddDir = GITLET_STAGE_FOR_ADD_DIR.listFiles();
         // if filesInStageForAddDir is empty, it is ok, we don't need to do anything,
         // and then we move down to check if we need to delete file from current commit.
-        for (File file : filesInStageForAddDir) {
-            if (targetFilename.equals(file.getName())) {
+        for (String filename : plainFilenamesIn(GITLET_STAGE_FOR_ADD_DIR)) {
+            if (targetFilename.equals(filename)) {
                 findFileInStageForAddDir = true;
-                file.delete();
+                join(GITLET_STAGE_FOR_ADD_DIR,filename).delete();
             }
         }
 
@@ -512,18 +511,18 @@ public class Repository {
         Commit currentCommit = getCommitBySha1(getHeadCommitSha1());
         List<String> filenamesInCommit = getFilenamesInCommit(currentCommit);
         System.out.println("=== Untracked Files ===");
-        for (File CWDFile : CWD.listFiles()) {
+        for (String CWDFilename : plainFilenamesIn(CWD)) {
             // TODO: I don't know why .gitlet is not hidden and it will be viewed as a file
-            if (CWDFile.getName().equals(".gitlet")) {
+            if (CWDFilename.equals(".gitlet")) {
                 continue;
             }
             // if a file is present in the CWD but neither stagedForAddDir nor tracked
-            boolean condition1 = !filenamesInCommit.contains(CWDFile.getName())
-                    && !join(GITLET_STAGE_FOR_ADD_DIR, CWDFile.getName()).exists();
+            boolean condition1 = !filenamesInCommit.contains(CWDFilename)
+                    && !join(GITLET_STAGE_FOR_ADD_DIR, CWDFilename).exists();
             // if there is a file both exist in CWD and stagedForRemoveDir
-            boolean condition2 = join(GITLET_STAGE_FOR_REMOVE_DIR, CWDFile.getName()).exists();
+            boolean condition2 = join(GITLET_STAGE_FOR_REMOVE_DIR, CWDFilename).exists();
             if (condition1 || condition2) {
-                System.out.println(CWDFile.getName());
+                System.out.println(CWDFilename);
             }
         }
         System.out.println();
@@ -577,12 +576,12 @@ public class Repository {
         Commit currentCommit = getCommitBySha1(getHeadCommitSha1());
         List<String> filenamesInCurrCommit = getFilenamesInCommit(currentCommit);
 
-        for (File CWDFile : CWD.listFiles()) {
-            if (CWDFile.getName().equals(".gitlet")) {
+        for (String CWDFilename : Objects.requireNonNull(plainFilenamesIn(CWD))) {
+            if (CWDFilename.equals(".gitlet")) {
                 continue;
             }
-            boolean condition1 = !filenamesInCurrCommit.contains(CWDFile.getName());
-            boolean condition2 = filenamesInTargetCommit.contains(CWDFile.getName());
+            boolean condition1 = !filenamesInCurrCommit.contains(CWDFilename);
+            boolean condition2 = filenamesInTargetCommit.contains(CWDFilename);
             // if a CWDFile is untracked by current commit
             // and the target commit will overwrite the CWDFile
             if (condition1 && condition2) {
@@ -1176,17 +1175,18 @@ public class Repository {
             }
         }
 
-        for (File file : Objects.requireNonNull(GITLET_STAGE_FOR_ADD_DIR.listFiles())) {
-            if (join(CWD, file.getName()).exists()) {
+        for (String filename : plainFilenamesIn(GITLET_STAGE_FOR_ADD_DIR)) {
+            if (join(CWD, filename).exists()) {
                 // if the file is staged for addition,
                 // but with different contents than in the working directory
-                if (!sha1(readContentsAsString(file)).equals(
-                        sha1(readContentsAsString(join(CWD, file.getName()))))) {
-                    fileStateMap.put(file.getName(), "modified");
+                if(!sha1(readContents(join(GITLET_STAGE_FOR_ADD_DIR,filename)))
+                        .equals(sha1(readContents(join(CWD,filename))))){
+
+                    fileStateMap.put(filename, "modified");
                 }
             } else {
                 // Staged for addition, but deleted in the working directory
-                fileStateMap.put(file.getName(), "deleted");
+                fileStateMap.put(filename, "deleted");
             }
         }
 
