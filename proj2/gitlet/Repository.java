@@ -628,6 +628,7 @@ public class Repository {
          */
         boolean hasMergeConflict =
                 checkMergeCases(spiltPointCommit, currentCommit, targetCommit);
+        /*
         if (spiltPointCommit.getTimeStamp() != currentCommit.getTimeStamp()
                 && spiltPointCommit.getTimeStamp() != targetCommit.getTimeStamp()) {
 
@@ -636,7 +637,11 @@ public class Repository {
                     + " into " + theNameOfTheActiveBranch + ".",
                     getCommitSha1AtTargetBranch(targetBranchName));
         }
-
+         */
+        String theNameOfTheActiveBranch = readContentsAsString(GITLET_ACTIVE_BRANCH_FILE);
+        setUpMergeConflictCommit("Merged " + targetBranchName
+                        + " into " + theNameOfTheActiveBranch + ".",
+                getCommitSha1AtTargetBranch(targetBranchName));
         if (hasMergeConflict) {
             System.out.println("Encountered a merge conflict.");
         }
