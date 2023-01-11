@@ -600,15 +600,15 @@ public class Repository {
 
         Set<String> ancestorsSet = new HashSet<>();
         getAncestorsOfCommit(currentCommit, ancestorsSet);
-        if(ancestorsSet.contains(getCommitSha1(targetCommit))){
+        if (ancestorsSet.contains(getCommitSha1(targetCommit))) {
             System.out.println("Given branch is an ancestor of the current branch.");
             System.exit(0);
         }
 
         // flush the old data
-        ancestorsSet=new HashSet<>();
-        getAncestorsOfCommit(targetCommit,ancestorsSet);
-        if(ancestorsSet.contains(getCommitSha1(currentCommit))){
+        ancestorsSet = new HashSet<>();
+        getAncestorsOfCommit(targetCommit, ancestorsSet);
+        if (ancestorsSet.contains(getCommitSha1(currentCommit))) {
             checkoutBranchName(targetBranchName);
             System.out.println("Current branch fast-forwarded.");
             System.exit(0);
@@ -626,10 +626,17 @@ public class Repository {
         // spec doesn't say staged it
         mergeConflict(spiltPointCommit, currentCommit, targetCommit);
          */
-        boolean hasMergeConflict = checkMergeCases(spiltPointCommit, currentCommit, targetCommit);
-        String theNameOfTheActiveBranch = readContentsAsString(GITLET_ACTIVE_BRANCH_FILE);
-        setUpMergeConflictCommit("Merged " + targetBranchName
-                + " into " + theNameOfTheActiveBranch + ".", getCommitSha1AtTargetBranch(targetBranchName));
+        boolean hasMergeConflict =
+                checkMergeCases(spiltPointCommit, currentCommit, targetCommit);
+        if (spiltPointCommit.getTimeStamp() != currentCommit.getTimeStamp()
+                && spiltPointCommit.getTimeStamp() != targetCommit.getTimeStamp()) {
+
+            String theNameOfTheActiveBranch = readContentsAsString(GITLET_ACTIVE_BRANCH_FILE);
+            setUpMergeConflictCommit("Merged " + targetBranchName
+                    + " into " + theNameOfTheActiveBranch + ".",
+                    getCommitSha1AtTargetBranch(targetBranchName));
+        }
+
         if (hasMergeConflict) {
             System.out.println("Encountered a merge conflict.");
         }
@@ -1293,7 +1300,7 @@ public class Repository {
     }
 
     private static String getCommitSha1(Commit commit) {
-       return serializeCommit(commit);
+        return serializeCommit(commit);
     }
 
 }
