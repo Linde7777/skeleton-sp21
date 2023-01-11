@@ -1065,18 +1065,19 @@ public class Repository {
 
         // find the latest common ancestors
         // let's say there is ancestor A and ancestor B in commonAncestors,
-        // if A is one of the ancestor of B, then we know A is not the latest ancestor
+        // if A has no ancestor, then we know A is not the latest ancestor,
+        // then we remove A from commonAncestors
         while (commonAncestors.size() > 1) {
             String ancestorCommitSha1 = commonAncestors.get(0);
             Commit ancestorCommit = getCommitBySha1(ancestorCommitSha1);
             set = new HashSet<>();
             getAncestorsOfCommit(ancestorCommit, set);
-            for (int i = 0; i < commonAncestors.size(); i++) {
-                if (set.contains(commonAncestors.get(i))) {
-                    commonAncestors.remove(i);
-                    break;
-                }
+            boolean flag = false;
+            // TODO: if ancestorCommit has no ancestor
+            if (set.size() == 0) {
+                commonAncestors.remove(ancestorCommitSha1);
             }
+
         }
         String ancestorCommitSha1 = commonAncestors.get(0);
         return getCommitBySha1(ancestorCommitSha1);
