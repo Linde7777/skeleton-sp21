@@ -1043,19 +1043,57 @@ public class Repository {
     }
 
     /**
-     * This is similar to find the latest common ancestor of two linked-list
+     * This NOT is similar to find the latest common ancestor of two linked-list.
+     * merge() let a merged commit to have two parents, this will make the linked-list
+     * into Graph.
      */
     private static Commit getCommitAtSplitPoint(Commit commit1, Commit commit2) {
-        //TODO: bug here, it is not a linked-list, it is a graph
-        Commit p1 = commit1;
-        Commit p2 = commit2;
-        // timestamp is unique
-        while (!p1.getTimeStamp().equals(p2.getTimeStamp())) {
-            // TODO: the case that p1 or p2 will be null
-            p1 = (p1 != null ? getTheFirstParentOfGivenCommit(p1) : commit2);
-            p2 = (p2 != null ? getTheFirstParentOfGivenCommit(p2) : commit1);
+        Set<String> set = new HashSet<>();
+        getAncestorsOfCommit(commit1, set);
+        List<String> ancestorsOfCommit1 = new ArrayList<>(set);
+
+        // flush the old data
+        set = new HashSet<>();
+        getAncestorsOfCommit(commit2, set);
+        List<String> ancestorsOfCommit2 = new ArrayList<>(set);
+
+        // if you haven't call merge() before, the commit1 and commit2 will
+        // only have one common ancestor: "initial commit".
+        // but if have call merge(), they may have multiple common ancestor
+        List<String> commonAncestors = new ArrayList<>();
+        commonAncestors.retainAll(ancestorsOfCommit1);
+        commonAncestors.retainAll(ancestorsOfCommit2);
+
+        // find the latest common ancestors
+        // let's say there is ancestor A and ancestor B in commonAncestors,
+        // if A is one of the ancestor of B, then we know B is not the latest ancestor
+        for (int i = 0; i < commonAncestors.size(); i++) {
+            String ancestorCommitSha1 = commonAncestors.get(i);
+            Commit ancestorCommit = getCommitBySha1(ancestorCommitSha1);
+            set = new HashSet<>();
+            getAncestorsOfCommit(ancestorCommit, set);
+            for (int j = 0; j < commonAncestors.size(); j++) {
+                if (j == i) {
+                    continue;
+                }
+                if (!set.contains(commonAncestors.get(j))) {
+                    return ancestorCommit;
+                }
+            }
         }
-        return p1;
+
+        return null;
+    }
+
+
+    private static Set<String> getAncestorsOfCommit(Commit commit, Set<String> set) {
+        List<String> parentSha1List = commit.getParentSha1List();
+        for (String parentSha1 : parentSha1List) {
+            set.add(parentSha1);
+            commit = getCommitBySha1(parentSha1);
+            set.addAll(getAncestorsOfCommit(commit, set));
+        }
+        return set;
     }
 
 
