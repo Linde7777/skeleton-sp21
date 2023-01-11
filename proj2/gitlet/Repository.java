@@ -255,7 +255,7 @@ public class Repository {
         for (String filename : plainFilenamesIn(GITLET_STAGE_FOR_ADD_DIR)) {
             if (targetFilename.equals(filename)) {
                 findFileInStageForAddDir = true;
-                join(GITLET_STAGE_FOR_ADD_DIR,filename).delete();
+                join(GITLET_STAGE_FOR_ADD_DIR, filename).delete();
             }
         }
 
@@ -584,23 +584,22 @@ public class Repository {
         }
     }
 
+    //TODO AG test35/40/43 timeout
     public static void merge(String targetBranchName) {
         checkMergeFailureCases(targetBranchName);
         Commit targetCommit = getCommitAtTargetBranch(targetBranchName);
         Commit currentCommit = getCommitBySha1(getHeadCommitSha1());
-        Commit spiltPointCommit = getCommitAtSplitPoint(targetCommit, currentCommit);
+        List<String> ancestorsListOfCurrCommit = getAncestorsOfCommit(currentCommit);
+        List<String> ancestorsListOfTarCommit = getAncestorsOfCommit(targetCommit);
+        Commit spiltPointCommit = getCommitAtSplitPoint(ancestorsListOfCurrCommit,ancestorsListOfTarCommit);
 
-        Set<String> ancestorsSet = new HashSet<>();
-        getAncestorsOfCommit(currentCommit, ancestorsSet);
-        if (ancestorsSet.contains(getCommitSha1(targetCommit))) {
+        if (ancestorsListOfCurrCommit.contains(getCommitSha1(targetCommit))) {
             System.out.println("Given branch is an ancestor of the current branch.");
             System.exit(0);
         }
 
         // flush the old data
-        ancestorsSet = new HashSet<>();
-        getAncestorsOfCommit(targetCommit, ancestorsSet);
-        if (ancestorsSet.contains(getCommitSha1(currentCommit))) {
+        if (ancestorsListOfTarCommit.contains(getCommitSha1(currentCommit))) {
             checkoutBranchName(targetBranchName);
             System.out.println("Current branch fast-forwarded.");
             System.exit(0);
@@ -1057,21 +1056,13 @@ public class Repository {
      * merge() let a merged commit to have two parents, this will make the linked-list
      * into Graph.
      */
-    private static Commit getCommitAtSplitPoint(Commit commit1, Commit commit2) {
-        Set<String> set = new HashSet<>();
-        getAncestorsOfCommit(commit1, set);
-        List<String> ancestorsOfCommit1 = new ArrayList<>(set);
-
-        // flush the old data
-        set = new HashSet<>();
-        getAncestorsOfCommit(commit2, set);
-        List<String> ancestorsOfCommit2 = new ArrayList<>(set);
-
+    private static Commit getCommitAtSplitPoint(List<String> ancestorsListOfCommit1,
+                                                List<String> ancestorsListOfCommit2) {
         // if you haven't call merge() before, the commit1 and commit2 will
         // only have one common ancestor: "initial commit".
         // but if have call merge(), they may have multiple common ancestor
-        ancestorsOfCommit1.retainAll(ancestorsOfCommit2);
-        List<String> commonAncestors = ancestorsOfCommit1;
+        ancestorsListOfCommit1.retainAll(ancestorsListOfCommit2);
+        List<String> commonAncestors = ancestorsListOfCommit1;
 
         // find the latest common ancestors
         // let's say there is ancestor A and ancestor B in commonAncestors,
@@ -1080,11 +1071,10 @@ public class Repository {
         while (commonAncestors.size() > 1) {
             String ancestorCommitSha1 = commonAncestors.get(0);
             Commit ancestorCommit = getCommitBySha1(ancestorCommitSha1);
-            set = new HashSet<>();
-            getAncestorsOfCommit(ancestorCommit, set);
+            List<String> ancestorsList = getAncestorsOfCommit(ancestorCommit);
             boolean flag = false;
             // TODO: if ancestorCommit has no ancestor
-            if (set.size() == 0) {
+            if (ancestorsList.size() == 0) {
                 commonAncestors.remove(ancestorCommitSha1);
             }
 
@@ -1093,6 +1083,14 @@ public class Repository {
         return getCommitBySha1(ancestorCommitSha1);
     }
 
+    private static List<String> getAncestorsOfCommit(Commit commit) {
+        Set<String> set = new HashSet<>();
+        getAncestorsOfCommit(commit, set);
+        List<String> ancestorsList = new ArrayList<>(set);
+        Collections.sort(ancestorsList);
+        //TODO: or use TreeSet?
+        return ancestorsList;
+    }
 
     private static Set<String> getAncestorsOfCommit(Commit commit, Set<String> set) {
         List<String> parentSha1List = commit.getParentSha1List();
@@ -1172,8 +1170,8 @@ public class Repository {
             if (join(CWD, filename).exists()) {
                 // if the file is staged for addition,
                 // but with different contents than in the working directory
-                if(!sha1(readContents(join(GITLET_STAGE_FOR_ADD_DIR,filename)))
-                        .equals(sha1(readContents(join(CWD,filename))))){
+                if (!sha1(readContents(join(GITLET_STAGE_FOR_ADD_DIR, filename)))
+                        .equals(sha1(readContents(join(CWD, filename))))) {
 
                     fileStateMap.put(filename, "modified");
                 }
