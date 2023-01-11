@@ -36,8 +36,7 @@ Encountered a merge conflict.
 * g.txt
 = h.txt wug2.txt
 = k.txt wug3.txt
-# the content of test file has problem, so ignore here
-# = f.txt conflict1.txt
+= f.txt conflict1.txt
 > log
 ${COMMIT_LOG}
 ===
