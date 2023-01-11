@@ -47,12 +47,6 @@ public class Repository {
     public static final File GITLET_BLOBS_DIR = join(GITLET_DIR, "blobs");
 
     /**
-     * we copy blobs from .gitlet/blobs and paste them in this directory,
-     * then rename it(because blobs is just content, their name is just their sha1)
-     */
-    public static final File GITLET_BLOBS_CONVERT_DIR = join(GITLET_DIR, "convert");
-
-    /**
      * The .gitlet/commits directory, where store the serialized Commits
      */
     public static final File GITLET_COMMITS_DIR = join(GITLET_DIR, "commits");
@@ -92,7 +86,6 @@ public class Repository {
         GITLET_STAGE_FOR_ADD_DIR.mkdir();
         GITLET_STAGE_FOR_REMOVE_DIR.mkdir();
         GITLET_BLOBS_DIR.mkdir();
-        GITLET_BLOBS_CONVERT_DIR.mkdir();
         GITLET_COMMITS_DIR.mkdir();
         GITLET_BRANCHES_DIR.mkdir();
         try {
