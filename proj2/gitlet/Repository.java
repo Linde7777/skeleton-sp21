@@ -1060,29 +1060,26 @@ public class Repository {
         // if you haven't call merge() before, the commit1 and commit2 will
         // only have one common ancestor: "initial commit".
         // but if have call merge(), they may have multiple common ancestor
-        List<String> commonAncestors = new ArrayList<>();
-        commonAncestors.retainAll(ancestorsOfCommit1);
-        commonAncestors.retainAll(ancestorsOfCommit2);
+        ancestorsOfCommit1.retainAll(ancestorsOfCommit2);
+        List<String> commonAncestors = ancestorsOfCommit1;
 
         // find the latest common ancestors
         // let's say there is ancestor A and ancestor B in commonAncestors,
-        // if A is one of the ancestor of B, then we know B is not the latest ancestor
-        for (int i = 0; i < commonAncestors.size(); i++) {
-            String ancestorCommitSha1 = commonAncestors.get(i);
+        // if A is one of the ancestor of B, then we know A is not the latest ancestor
+        while (commonAncestors.size() > 1) {
+            String ancestorCommitSha1 = commonAncestors.get(0);
             Commit ancestorCommit = getCommitBySha1(ancestorCommitSha1);
             set = new HashSet<>();
             getAncestorsOfCommit(ancestorCommit, set);
-            for (int j = 0; j < commonAncestors.size(); j++) {
-                if (j == i) {
-                    continue;
-                }
-                if (!set.contains(commonAncestors.get(j))) {
-                    return ancestorCommit;
+            for (int i = 0; i < commonAncestors.size(); i++) {
+                if (set.contains(commonAncestors.get(i))) {
+                    commonAncestors.remove(i);
+                    break;
                 }
             }
         }
-
-        return null;
+        String ancestorCommitSha1 = commonAncestors.get(0);
+        return getCommitBySha1(ancestorCommitSha1);
     }
 
 
