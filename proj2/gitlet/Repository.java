@@ -598,15 +598,21 @@ public class Repository {
         Commit currentCommit = getCommitBySha1(getHeadCommitSha1());
         Commit spiltPointCommit = getCommitAtSplitPoint(targetCommit, currentCommit);
 
-        if (spiltPointCommit.getTimeStamp().equals(targetCommit.getTimeStamp())) {
+        Set<String> ancestorsSet = new HashSet<>();
+        getAncestorsOfCommit(currentCommit, ancestorsSet);
+        if(ancestorsSet.contains(getCommitSha1(targetCommit))){
             System.out.println("Given branch is an ancestor of the current branch.");
             System.exit(0);
         }
-        if (spiltPointCommit.getTimeStamp().equals(currentCommit.getTimeStamp())) {
+
+        // flush the old data
+        ancestorsSet=new HashSet<>();
+        getAncestorsOfCommit(targetCommit,ancestorsSet);
+        if(ancestorsSet.contains(getCommitSha1(currentCommit))){
             checkoutBranchName(targetBranchName);
+            System.out.println("Current branch fast-forwarded.");
             System.exit(0);
         }
-
 
         /*
         mergeCase1(spiltPointCommit, currentCommit, targetCommit);
@@ -1284,6 +1290,10 @@ public class Repository {
         }
 
         return completedSha1;
+    }
+
+    private static String getCommitSha1(Commit commit) {
+       return serializeCommit(commit);
     }
 
 }
