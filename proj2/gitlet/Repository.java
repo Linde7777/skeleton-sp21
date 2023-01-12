@@ -319,7 +319,7 @@ public class Repository {
 
     public static void globalLog() {
         // since we don't care the order here, we can use File.list()
-        for(String commitDirName: Objects.requireNonNull(GITLET_COMMITS_DIR.list())){
+        for (String commitDirName : Objects.requireNonNull(GITLET_COMMITS_DIR.list())) {
             for (String commitSha1 : Objects.requireNonNull(plainFilenamesIn(join(GITLET_COMMITS_DIR, commitDirName)))) {
                 Commit commit = getCommitBySha1(commitSha1);
                 printLogInfo(commitSha1, commit);
@@ -330,13 +330,16 @@ public class Repository {
 
     public static void find(String targetMessage) {
         boolean findCommitWithTargetMessage = false;
-        for (String commitSha1 : Objects.requireNonNull(plainFilenamesIn(GITLET_COMMITS_DIR))) {
-            Commit commit = getCommitBySha1(commitSha1);
-            if (commit.getMessage().equals(targetMessage)) {
-                findCommitWithTargetMessage = true;
-                System.out.println(commitSha1);
+        for (String commitDirName : Objects.requireNonNull(GITLET_COMMITS_DIR.list())) {
+            for (String commitSha1 : Objects.requireNonNull(plainFilenamesIn(join(GITLET_COMMITS_DIR, commitDirName)))) {
+                Commit commit = getCommitBySha1(commitSha1);
+                if (commit.getMessage().equals(targetMessage)) {
+                    findCommitWithTargetMessage = true;
+                    System.out.println(commitSha1);
+                }
             }
         }
+
         if (!findCommitWithTargetMessage) {
             System.out.println("Found no commit with that message.");
         }
