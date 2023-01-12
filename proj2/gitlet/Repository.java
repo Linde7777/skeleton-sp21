@@ -584,8 +584,7 @@ public class Repository {
         }
     }
 
-    //TODO AG test35/40/43 timeout
-    //TODO test40 fail after optimization
+    // TODO: AG test36a 43 timeout
     public static void merge(String targetBranchName) {
         checkMergeFailureCases(targetBranchName);
         Commit targetCommit = getCommitAtTargetBranch(targetBranchName);
@@ -1086,10 +1085,10 @@ public class Repository {
     }
 
     private static List<String> getAncestorsOfCommit(Commit commit) {
-        Set<String> set = new HashSet<>();
+        Set<String> set = new TreeSet<>();
         getAncestorsOfCommit(commit, set);
         List<String> ancestorsList = new ArrayList<>(set);
-        Collections.sort(ancestorsList);
+        //Collections.sort(ancestorsList);
         //TODO: or use TreeSet?
         return ancestorsList;
     }
