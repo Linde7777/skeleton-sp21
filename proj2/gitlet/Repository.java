@@ -756,17 +756,27 @@ public class Repository {
                 filenamesAtCurrCommit, filenamesAtTargetCommit);
 
         for (String filename : allFilenamesList) {
-            boolean targetFileIsTheNewest =
-                    checkIfFileInGivenCommitIsTheNewest(filename, targetCommit, spiltPointCommit);
-            boolean currFileIsTheNewest =
-                    checkIfFileInGivenCommitIsTheNewest(filename, currentCommit, spiltPointCommit);
+            boolean targetFileIsSameAsSpiltFile =
+                    compareTwoCommit(filename, targetCommit, spiltPointCommit);
+            boolean currFileIsSameAsSpiltFile =
+                    compareTwoCommit(filename, currentCommit, spiltPointCommit);
+            boolean targetFileIsSameAsCurrFile =
+                    compareTwoCommit(filename, targetCommit, currentCommit);
 
-            if (targetFileIsTheNewest && !currFileIsTheNewest) {
+            if (!targetFileIsSameAsSpiltFile && currFileIsSameAsSpiltFile) {
                 updateContentsAndStage(targetCommit, filename);
-            } else if (currFileIsTheNewest && !targetFileIsTheNewest) {
+            } else if (!currFileIsSameAsSpiltFile && targetFileIsSameAsSpiltFile) {
                 updateContentsAndStage(currentCommit, filename);
-            } else if (currFileIsTheNewest) {
-                // if they are both the newest, we meet conflict
+            } else if (!currFileIsSameAsSpiltFile && !targetFileIsSameAsCurrFile) {
+                // if they are both the newest, and they are different from each other,
+                // that means we meet conflict.
+
+                // why we need !targetAndCurrCommitAreTheSame?
+                // let's say at spiltPointCommit, A.txt content is "hello"
+                // at targetCommit, A.txt is removed, at currCommit, A.txt is also removed
+                // in this case, both targetCommit and currCommit are the
+                // newest(be modified since spiltPoint), but they are both modified to the
+                // same way (both be removed), in this case, we can't say we meet merge conflict
                 hasMergeConflict = true;
                 String contentsOfTargetFile = getContentsOfFile(targetCommit, filename);
                 String contentsOfCurrFile = getContentsOfFile(currentCommit, filename);
@@ -838,24 +848,23 @@ public class Repository {
         return new ArrayList<>(set);
     }
 
-    // same: content is same or in both of them the file does not exist, return false
-    // not the same: content is different or in one of them the file does not exist
-    private static boolean checkIfFileInGivenCommitIsTheNewest(String filename, Commit givenCommit, Commit spiltPointCommit) {
+    // we compare givenCommit and benchmarkCommit,
+    // if the content of B.txt in givenCommit is NOT the same as
+    // the content of B.txt in benchmarkCommit, return false
+    private static boolean compareTwoCommit(String filename, Commit givenCommit, Commit benchmarkCommit) {
         TreeMap<String, String> givenMap = givenCommit.getMap();
-        TreeMap<String, String> spiltMap = spiltPointCommit.getMap();
+        TreeMap<String, String> spiltMap = benchmarkCommit.getMap();
         if (!givenMap.containsKey(filename) && !spiltMap.containsKey(filename)) {
-            return false;
+            return true;
         }
 
         if (givenMap.containsKey(filename) && spiltMap.containsKey(filename)) {
             String givenFileSha1 = givenMap.get(filename);
             String spiltFileSha1 = spiltMap.get(filename);
-            if (givenFileSha1.equals(spiltFileSha1)) {
-                return false;
-            }
+            return givenFileSha1.equals(spiltFileSha1);
         }
 
-        return true;
+        return false;
     }
 
 
