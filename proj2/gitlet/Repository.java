@@ -313,8 +313,8 @@ public class Repository {
         System.out.println("===");
         System.out.println("commit " + commitSha1);
         if (parentSha1List.size() == 2) {
-            System.out.println("Merge: " + parentSha1List.get(0).substring(0, PARENT_SHA1_LEN + 1)
-                    + " " + parentSha1List.get(1).substring(0, PARENT_SHA1_LEN + 1));
+            System.out.println("Merge: " + parentSha1List.get(0).substring(0, PARENT_SHA1_LEN)
+                    + " " + parentSha1List.get(1).substring(0, PARENT_SHA1_LEN));
         }
         System.out.println("Date: " + formattedDateString);
         System.out.println(commit.getMessage());
