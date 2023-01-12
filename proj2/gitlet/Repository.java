@@ -290,49 +290,41 @@ public class Repository {
 
     public static void log() {
         checkInitialize();
-        String currentCommitSha1 = getHeadCommitSha1();
-        while (currentCommitSha1 != null) {
-            Commit currentCommit = getCommitBySha1(currentCommitSha1);
-            Date date = currentCommit.getTimeStamp();
-            String formattedDateString = formatDate(date);
-            List<String> parentSha1List = currentCommit.getParentSha1List();
-
-            System.out.println("===");
-            System.out.println("commit " + currentCommitSha1);
-            if (parentSha1List.size() == 2) {
-                System.out.println("Merge: " + parentSha1List.get(0).substring(0, PARENT_SHA1_LEN + 1)
-                        + " " + parentSha1List.get(1).substring(0, PARENT_SHA1_LEN + 1));
-            }
-            System.out.println("Date: " + formattedDateString);
-            System.out.println(currentCommit.getMessage());
-            System.out.println();
-
+        String commitSha1 = getHeadCommitSha1();
+        while (commitSha1 != null) {
+            Commit commit = getCommitBySha1(commitSha1);
+            List<String> parentSha1List = commit.getParentSha1List();
+            printLogInfo(commitSha1, commit);
             // in log(), if a commit have multiple parents,
             // we only print the first parent
             if (!parentSha1List.isEmpty()) {
-                currentCommitSha1 = parentSha1List.get(0);
+                commitSha1 = parentSha1List.get(0);
             } else {
-                currentCommitSha1 = null;
+                commitSha1 = null;
             }
         }
 
     }
 
+    private static void printLogInfo(String commitSha1, Commit commit) {
+        Date date = commit.getTimeStamp();
+        List<String> parentSha1List = commit.getParentSha1List();
+        String formattedDateString = formatDate(date);
+        System.out.println("===");
+        System.out.println("commit " + commitSha1);
+        if (parentSha1List.size() == 2) {
+            System.out.println("Merge: " + parentSha1List.get(0).substring(0, PARENT_SHA1_LEN + 1)
+                    + " " + parentSha1List.get(1).substring(0, PARENT_SHA1_LEN + 1));
+        }
+        System.out.println("Date: " + formattedDateString);
+        System.out.println(commit.getMessage());
+        System.out.println();
+    }
+
     public static void globalLog() {
         for (String commitSha1 : plainFilenamesIn(GITLET_COMMITS_DIR)) {
             Commit commit = getCommitBySha1(commitSha1);
-            Date date = commit.getTimeStamp();
-            String formattedDateString = formatDate(date);
-            List<String> parentSha1List = commit.getParentSha1List();
-            System.out.println("===");
-            System.out.println("commit " + commitSha1);
-            if (parentSha1List.size() == 2) {
-                System.out.println("Merge: " + parentSha1List.get(0).substring(0, PARENT_SHA1_LEN + 1)
-                        + " " + parentSha1List.get(1).substring(0, PARENT_SHA1_LEN + 1));
-            }
-            System.out.println("Date: " + formattedDateString);
-            System.out.println(commit.getMessage());
-            System.out.println();
+            printLogInfo(commitSha1, commit);
         }
     }
 
