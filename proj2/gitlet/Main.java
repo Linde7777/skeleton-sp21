@@ -78,6 +78,10 @@ public class Main {
                 checkFuncArgumentLength(args, 1);
                 Repository.log();
                 break;
+            case "global-log":
+                checkFuncArgumentLength(args,1);
+                Repository.globalLog();
+                break;
             case "checkout":
                 if (args.length == 3 && args[1].equals("--")) {
                     String filename = args[2];

@@ -318,6 +318,24 @@ public class Repository {
 
     }
 
+    public static void globalLog() {
+        for (String commitSha1 : plainFilenamesIn(GITLET_COMMITS_DIR)) {
+            Commit commit = getCommitBySha1(commitSha1);
+            Date date = commit.getTimeStamp();
+            String formattedDateString = formatDate(date);
+            List<String> parentSha1List = commit.getParentSha1List();
+            System.out.println("===");
+            System.out.println("commit " + commitSha1);
+            if (parentSha1List.size() == 2) {
+                System.out.println("Merge: " + parentSha1List.get(0).substring(0, PARENT_SHA1_LEN + 1)
+                        + " " + parentSha1List.get(1).substring(0, PARENT_SHA1_LEN + 1));
+            }
+            System.out.println("Date: " + formattedDateString);
+            System.out.println(commit.getMessage());
+            System.out.println();
+        }
+    }
+
     public static void branch(String branchName) {
         checkInitialize();
         File branchFile = join(GITLET_BRANCHES_DIR, branchName);
