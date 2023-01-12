@@ -1085,7 +1085,7 @@ public class Repository {
     }
 
     private static List<String> getAncestorsOfCommit(Commit commit) {
-        Set<String> set = new TreeSet<>();
+        Set<String> set = new HashSet<>();
         getAncestorsOfCommit(commit, set);
         List<String> ancestorsList = new ArrayList<>(set);
         //Collections.sort(ancestorsList);
