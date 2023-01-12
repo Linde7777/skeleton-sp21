@@ -625,7 +625,7 @@ public class Repository {
         }
 
         Commit spiltPointCommit =
-                getCommitAtSplitPoint(ancestorsListOfCurrCommit, ancestorsListOfTarCommit);
+                getTheLatestCommonAncestorCommit(ancestorsListOfCurrCommit, ancestorsListOfTarCommit);
         boolean hasMergeConflict =
                 checkMergeCases(spiltPointCommit, currentCommit, targetCommit);
         /*
@@ -822,8 +822,8 @@ public class Repository {
      * <p>
      * Do notice that the value of parameter will be changed after this function is executed
      */
-    private static Commit getCommitAtSplitPoint(List<String> ancestorsListOfCommit1,
-                                                List<String> ancestorsListOfCommit2) {
+    private static Commit getTheLatestCommonAncestorCommit(List<String> ancestorsListOfCommit1,
+                                                           List<String> ancestorsListOfCommit2) {
 
         // if you haven't called merge() before, the commit1 and commit2 will
         // only have one common ancestor: "initial commit".
