@@ -119,7 +119,6 @@ public class Repository {
      * @param CWDFilename the file we want to add
      */
     public static void add(String CWDFilename) {
-        checkInitialize();
         File CWDFile = join(CWD, CWDFilename);
         if (!CWDFile.exists()) {
             System.out.println("File does not exist.");
@@ -168,7 +167,6 @@ public class Repository {
             System.out.println("Please enter a commit message.");
             System.exit(0);
         }
-        checkInitialize();
         checkIfStagedDirsAreAllEmpty();
         String HEADSha1 = getHeadCommitSha1();
         List<String> parentSha1List = new ArrayList<>();
@@ -251,7 +249,6 @@ public class Repository {
      * @param targetFilename the name of the file that we want to remove
      */
     public static void remove(String targetFilename) {
-        checkInitialize();
         boolean findFileInStageForAddDir = false;
         // if filesInStageForAddDir is empty, it is ok, we don't need to do anything,
         // and then we move down to check if we need to delete file from current commit.
@@ -289,7 +286,6 @@ public class Repository {
     }
 
     public static void log() {
-        checkInitialize();
         String commitSha1 = getHeadCommitSha1();
         while (commitSha1 != null) {
             Commit commit = getCommitBySha1(commitSha1);
@@ -343,7 +339,6 @@ public class Repository {
     }
 
     public static void branch(String branchName) {
-        checkInitialize();
         File branchFile = join(GITLET_BRANCHES_DIR, branchName);
         if (!branchFile.exists()) {
             try {
@@ -361,7 +356,6 @@ public class Repository {
     }
 
     public static void removeBranch(String branchName) {
-        checkInitialize();
         if (readContentsAsString(GITLET_ACTIVE_BRANCH_FILE).equals(branchName)) {
             System.out.println("Cannot remove the current branch.");
             System.exit(0);
@@ -384,7 +378,6 @@ public class Repository {
      * that’s already there if there is one. The new version of the file is not staged.
      */
     public static void checkoutCommitAndFilename(String targetCommitId, String targetFilename) {
-        checkInitialize();
         Commit targetCommit = getCommitBySha1(getCompletedSha1(targetCommitId));
         checkoutCommitAndFilename(targetCommit, targetFilename);
     }
@@ -422,7 +415,6 @@ public class Repository {
      * The new version of the file is not staged.
      */
     public static void checkoutFilename(String filename) {
-        checkInitialize();
         Commit headCommit = getCommitBySha1(getHeadCommitSha1());
         checkoutCommitAndFilename(headCommit, filename);
     }
@@ -439,7 +431,6 @@ public class Repository {
      * branch is the current branch
      */
     public static void checkoutBranchName(String targetBranchName) {
-        checkInitialize();
         File targetBranchFile = join(GITLET_BRANCHES_DIR, targetBranchName);
         if (!targetBranchFile.exists()) {
             System.out.println("No such branch exists.");
@@ -493,7 +484,6 @@ public class Repository {
     }
 
     public static void status() {
-        checkInitialize();
         String theNameOfTheActiveBranch = readContentsAsString(GITLET_ACTIVE_BRANCH_FILE);
         System.out.println("=== Branches ===");
         System.out.println("*" + theNameOfTheActiveBranch);
@@ -561,7 +551,6 @@ public class Repository {
      * @param uncompletedCommitId commitId can be abbreviated as for checkout
      */
     public static void resetWithUncompletedCommitId(String uncompletedCommitId) {
-        checkInitialize();
         String completedCommitId = getCompletedSha1(uncompletedCommitId);
         resetWithCompletedCommitId(completedCommitId);
     }
@@ -883,13 +872,6 @@ public class Repository {
             firstParentSha1 = commit.getParentSha1List().get(0);
         }
         return getCommitBySha1(firstParentSha1);
-    }
-
-    private static void checkInitialize() {
-        if (!GITLET_DIR.exists()) {
-            System.out.println("Not in an initialized Gitlet directory.");
-            System.exit(0);
-        }
     }
 
     private static List<String> getFilenamesInCommit(Commit commit) {
