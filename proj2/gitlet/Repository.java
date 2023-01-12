@@ -328,12 +328,17 @@ public class Repository {
         }
     }
 
-    public static void find(String targetMessage){
+    public static void find(String targetMessage) {
+        boolean findCommitWithTargetMessage = false;
         for (String commitSha1 : Objects.requireNonNull(plainFilenamesIn(GITLET_COMMITS_DIR))) {
             Commit commit = getCommitBySha1(commitSha1);
-            if(commit.getMessage().equals(targetMessage)){
+            if (commit.getMessage().equals(targetMessage)) {
+                findCommitWithTargetMessage = true;
                 System.out.println(commitSha1);
             }
+        }
+        if(!findCommitWithTargetMessage){
+            System.out.println("Found no commit with that message.");
         }
     }
 
