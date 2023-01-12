@@ -607,7 +607,7 @@ public class Repository {
         }
     }
 
-    //TODO: AG test33 timeout, local test33 is passed
+    //TODO: timeout, local test is passed
     public static void merge(String targetBranchName) {
         checkMergeFailureCases(targetBranchName);
         Commit targetCommit = getCommitAtTargetBranch(targetBranchName);
@@ -819,13 +819,11 @@ public class Repository {
      * This NOT is similar to find the latest common ancestor of two linked-list.
      * merge() let a merged commit to have two parents, this will make the linked-list
      * into Graph.
+     *
+     * Do notice that the value of parameter will be changed after this function is executed
      */
-    private static Commit getCommitAtSplitPoint(List<String> ancestorsList1,
-                                                List<String> ancestorsList2) {
-
-        // List is a reference type, we don't want to change the value in it
-        List<String> ancestorsListOfCommit1 = new ArrayList<>(ancestorsList1);
-        List<String> ancestorsListOfCommit2 = new ArrayList<>(ancestorsList2);
+    private static Commit getCommitAtSplitPoint(List<String> ancestorsListOfCommit1,
+                                                List<String> ancestorsListOfCommit2) {
 
         // if you haven't called merge() before, the commit1 and commit2 will
         // only have one common ancestor: "initial commit".
