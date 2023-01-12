@@ -71,6 +71,11 @@ public class Repository {
      */
     public static final File HEAD_FILE = join(GITLET_BRANCHES_DIR, "HEAD");
 
+    /**
+     * if a commit has two parent, in log() we will print
+     * the first seven digit of parent sha1
+     */
+    private static final int PARENT_SHA1_LEN = 7;
 
     /**
      * notice that we won't call add() then call commit(),
@@ -153,8 +158,6 @@ public class Repository {
                 throw new GitletException(excp.getMessage());
             }
         }
-
-
     }
 
     /**
@@ -287,24 +290,27 @@ public class Repository {
 
     public static void log() {
         checkInitialize();
-        //todo: dealing with merge
-
         String currentCommitSha1 = getHeadCommitSha1();
         while (currentCommitSha1 != null) {
             Commit currentCommit = getCommitBySha1(currentCommitSha1);
             Date date = currentCommit.getTimeStamp();
             String formattedDateString = formatDate(date);
+            List<String> parentSha1List = currentCommit.getParentSha1List();
 
             System.out.println("===");
             System.out.println("commit " + currentCommitSha1);
+            if (parentSha1List.size() == 2) {
+                System.out.println("Merge: " + parentSha1List.get(0).substring(0, PARENT_SHA1_LEN + 1)
+                        + " " + parentSha1List.get(1).substring(0, PARENT_SHA1_LEN + 1));
+            }
             System.out.println("Date: " + formattedDateString);
             System.out.println(currentCommit.getMessage());
             System.out.println();
 
             // in log(), if a commit have multiple parents,
             // we only print the first parent
-            if (!currentCommit.getParentSha1List().isEmpty()) {
-                currentCommitSha1 = currentCommit.getParentSha1List().get(0);
+            if (!parentSha1List.isEmpty()) {
+                currentCommitSha1 = parentSha1List.get(0);
             } else {
                 currentCommitSha1 = null;
             }
@@ -570,9 +576,6 @@ public class Repository {
         List<String> filenamesInCurrCommit = getFilenamesInCommit(currentCommit);
 
         for (String CWDFilename : Objects.requireNonNull(plainFilenamesIn(CWD))) {
-            if (CWDFilename.equals(".gitlet")) {
-                continue;
-            }
             boolean condition1 = !filenamesInCurrCommit.contains(CWDFilename);
             boolean condition2 = filenamesInTargetCommit.contains(CWDFilename);
             // if a CWDFile is untracked by current commit
@@ -584,7 +587,7 @@ public class Repository {
         }
     }
 
-    //TODO: AG test33 timeout
+    //TODO: AG test33 timeout, local test33 is passed
     public static void merge(String targetBranchName) {
         checkMergeFailureCases(targetBranchName);
         Commit targetCommit = getCommitAtTargetBranch(targetBranchName);
@@ -603,18 +606,6 @@ public class Repository {
 
         Commit spiltPointCommit =
                 getCommitAtSplitPoint(ancestorsListOfCurrCommit, ancestorsListOfTarCommit);
-        /*
-        mergeCase1(spiltPointCommit, currentCommit, targetCommit);
-        //mergeCase2(spiltPointCommit, currentCommit, targetCommit);
-        //mergeCase3(spiltPointCommit, currentCommit, targetCommit);
-        //mergeCase4(spiltPointCommit, currentCommit, targetCommit);
-        mergeCase5(spiltPointCommit, targetCommit);
-        mergeCase6(spiltPointCommit, currentCommit, targetCommit);
-        mergeCase7(spiltPointCommit, currentCommit, targetCommit);
-        // in mergeConflict, the file will be overwritten, should I stage that file?
-        // spec doesn't say staged it
-        mergeConflict(spiltPointCommit, currentCommit, targetCommit);
-         */
         boolean hasMergeConflict =
                 checkMergeCases(spiltPointCommit, currentCommit, targetCommit);
         /*
@@ -1005,16 +996,16 @@ public class Repository {
     }
 
     /**
-     * @param commitId the abbreviated commit sha1
+     * @param incompleteCommitId the abbreviated commit sha1
      */
-    private static String getCompletedSha1(String commitId) {
+    private static String getCompletedSha1(String incompleteCommitId) {
         String completedSha1 = null;
-        int len = commitId.length();
-        if (commitId.length() < 2) {
+        int len = incompleteCommitId.length();
+        if (len < 2) {
             System.out.println("No commit with that id exists.");
             System.exit(0);
         }
-        String firstTwoSha1 = commitId.substring(0, 2);
+        String firstTwoSha1 = incompleteCommitId.substring(0, 2);
         File commitDir = join(GITLET_COMMITS_DIR, firstTwoSha1);
         List<String> filenamesInCommitDir = plainFilenamesIn(commitDir);
         if (filenamesInCommitDir == null) {
@@ -1031,7 +1022,7 @@ public class Repository {
          */
         boolean foundAFileSimilarToCommitId = false;
         for (String filename : filenamesInCommitDir) {
-            if (filename.substring(0, len).equals(commitId)) {
+            if (filename.substring(0, len).equals(incompleteCommitId)) {
                 // if it has already found a file similar to commit id,
                 // and now it found again, that means there are at least
                 // two files that are similar to commit id
