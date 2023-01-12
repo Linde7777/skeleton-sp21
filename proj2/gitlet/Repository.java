@@ -854,14 +854,13 @@ public class Repository {
         return new ArrayList<>(set);
     }
 
-    private static Set<String> getAncestorsOfCommit(Commit commit, Set<String> set) {
+    private static void getAncestorsOfCommit(Commit commit, Set<String> set) {
         List<String> parentSha1List = commit.getParentSha1List();
         for (String parentSha1 : parentSha1List) {
             set.add(parentSha1);
             commit = getCommitBySha1(parentSha1);
-            set.addAll(getAncestorsOfCommit(commit, set));
+            getAncestorsOfCommit(commit, set);
         }
-        return set;
     }
 
 
