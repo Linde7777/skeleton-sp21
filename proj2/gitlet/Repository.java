@@ -252,7 +252,7 @@ public class Repository {
         boolean findFileInStageForAddDir = false;
         // if filesInStageForAddDir is empty, it is ok, we don't need to do anything,
         // and then we move down to check if we need to delete file from current commit.
-        for (String filename : plainFilenamesIn(GITLET_STAGE_FOR_ADD_DIR)) {
+        for (String filename : Objects.requireNonNull(plainFilenamesIn(GITLET_STAGE_FOR_ADD_DIR))) {
             if (targetFilename.equals(filename)) {
                 findFileInStageForAddDir = true;
                 join(GITLET_STAGE_FOR_ADD_DIR, filename).delete();
@@ -531,7 +531,7 @@ public class Repository {
         Commit currentCommit = getCommitBySha1(getHeadCommitSha1());
         List<String> filenamesInCommit = getFilenamesInCommit(currentCommit);
         System.out.println("=== Untracked Files ===");
-        for (String CWDFilename : plainFilenamesIn(CWD)) {
+        for (String CWDFilename : Objects.requireNonNull(plainFilenamesIn(CWD))) {
             // TODO: I don't know why .gitlet is not hidden and it will be viewed as a file
             if (CWDFilename.equals(".gitlet")) {
                 continue;
@@ -781,8 +781,8 @@ public class Repository {
     }
 
     private static void checkMergeFailureCases(String targetBranchName) {
-        if (GITLET_STAGE_FOR_ADD_DIR.list().length != 0
-                || GITLET_STAGE_FOR_REMOVE_DIR.list().length != 0) {
+        if (Objects.requireNonNull(GITLET_STAGE_FOR_ADD_DIR.list()).length != 0
+                || Objects.requireNonNull(GITLET_STAGE_FOR_REMOVE_DIR.list()).length != 0) {
             System.out.println("You have uncommitted changes.");
             System.exit(0);
         }
@@ -880,27 +880,9 @@ public class Repository {
          */
     }
 
-
-    /**
-     * commit can have more than one parent,
-     * this function will return the first parent
-     */
-    private static Commit getTheFirstParentOfGivenCommit(Commit commit) {
-        String firstParentSha1;
-        if (commit.getParentSha1List().isEmpty()) {
-            firstParentSha1 = null;
-        } else {
-            firstParentSha1 = commit.getParentSha1List().get(0);
-        }
-        return getCommitBySha1(firstParentSha1);
-    }
-
     private static List<String> getFilenamesInCommit(Commit commit) {
-        List<String> filenamesList = new ArrayList<>();
         TreeMap<String, String> map = commit.getMap();
-        filenamesList.addAll(map.keySet());
-
-        return filenamesList;
+        return new ArrayList<>(map.keySet());
     }
 
     /**
@@ -937,12 +919,12 @@ public class Repository {
             }
         }
 
-        for (String filename : plainFilenamesIn(GITLET_STAGE_FOR_ADD_DIR)) {
+        for (String filename : Objects.requireNonNull(plainFilenamesIn(GITLET_STAGE_FOR_ADD_DIR))) {
             if (join(CWD, filename).exists()) {
                 // if the file is staged for addition,
                 // but with different contents than in the working directory
-                if (!sha1(readContents(join(GITLET_STAGE_FOR_ADD_DIR, filename)))
-                        .equals(sha1(readContents(join(CWD, filename))))) {
+                if (!sha1((Object) readContents(join(GITLET_STAGE_FOR_ADD_DIR, filename)))
+                        .equals(sha1((Object) readContents(join(CWD, filename))))) {
 
                     fileStateMap.put(filename, "modified");
                 }
