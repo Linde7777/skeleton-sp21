@@ -819,7 +819,7 @@ public class Repository {
      * This NOT is similar to find the latest common ancestor of two linked-list.
      * merge() let a merged commit to have two parents, this will make the linked-list
      * into Graph.
-     *
+     * <p>
      * Do notice that the value of parameter will be changed after this function is executed
      */
     private static Commit getCommitAtSplitPoint(List<String> ancestorsListOfCommit1,
@@ -856,11 +856,28 @@ public class Repository {
 
     private static void getAncestorsOfCommit(Commit commit, Set<String> set) {
         List<String> parentSha1List = commit.getParentSha1List();
+        if (parentSha1List.size() == 0) {
+            return;
+        }
+        String firstParentSha1 = parentSha1List.get(0);
+        set.add(firstParentSha1);
+        Commit firstParentCommit = getCommitBySha1(firstParentSha1);
+        getAncestorsOfCommit(firstParentCommit, set);
+        if (parentSha1List.size() == 2) {
+            String secondParentSha1 = parentSha1List.get(1);
+            set.add(secondParentSha1);
+            Commit secondParentCommit = getCommitBySha1(secondParentSha1);
+            getAncestorsOfCommit(secondParentCommit, set);
+        }
+        /*
+        old version:
+        List<String> parentSha1List = commit.getParentSha1List();
         for (String parentSha1 : parentSha1List) {
             set.add(parentSha1);
             commit = getCommitBySha1(parentSha1);
             getAncestorsOfCommit(commit, set);
         }
+         */
     }
 
 
