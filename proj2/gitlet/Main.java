@@ -79,8 +79,13 @@ public class Main {
                 Repository.log();
                 break;
             case "global-log":
-                checkFuncArgumentLength(args,1);
+                checkFuncArgumentLength(args, 1);
                 Repository.globalLog();
+                break;
+            case "find":
+                checkFuncArgumentLength(args, 2);
+                String messageToBeSearch = args[1];
+                Repository.find(messageToBeSearch);
                 break;
             case "checkout":
                 if (args.length == 3 && args[1].equals("--")) {

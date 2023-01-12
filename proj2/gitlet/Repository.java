@@ -322,9 +322,18 @@ public class Repository {
     }
 
     public static void globalLog() {
-        for (String commitSha1 : plainFilenamesIn(GITLET_COMMITS_DIR)) {
+        for (String commitSha1 : Objects.requireNonNull(plainFilenamesIn(GITLET_COMMITS_DIR))) {
             Commit commit = getCommitBySha1(commitSha1);
             printLogInfo(commitSha1, commit);
+        }
+    }
+
+    public static void find(String targetMessage){
+        for (String commitSha1 : Objects.requireNonNull(plainFilenamesIn(GITLET_COMMITS_DIR))) {
+            Commit commit = getCommitBySha1(commitSha1);
+            if(commit.getMessage().equals(targetMessage)){
+                System.out.println(commitSha1);
+            }
         }
     }
 
