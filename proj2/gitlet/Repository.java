@@ -585,26 +585,25 @@ public class Repository {
     }
 
     //TODO AG test35/40/43 timeout
+    //TODO test40 fail after optimization
     public static void merge(String targetBranchName) {
         checkMergeFailureCases(targetBranchName);
         Commit targetCommit = getCommitAtTargetBranch(targetBranchName);
         Commit currentCommit = getCommitBySha1(getHeadCommitSha1());
         List<String> ancestorsListOfCurrCommit = getAncestorsOfCommit(currentCommit);
         List<String> ancestorsListOfTarCommit = getAncestorsOfCommit(targetCommit);
-        Commit spiltPointCommit = getCommitAtSplitPoint(ancestorsListOfCurrCommit,ancestorsListOfTarCommit);
-
         if (ancestorsListOfCurrCommit.contains(getCommitSha1(targetCommit))) {
             System.out.println("Given branch is an ancestor of the current branch.");
             System.exit(0);
         }
-
-        // flush the old data
         if (ancestorsListOfTarCommit.contains(getCommitSha1(currentCommit))) {
             checkoutBranchName(targetBranchName);
             System.out.println("Current branch fast-forwarded.");
             System.exit(0);
         }
 
+        Commit spiltPointCommit =
+                getCommitAtSplitPoint(ancestorsListOfCurrCommit, ancestorsListOfTarCommit);
         /*
         mergeCase1(spiltPointCommit, currentCommit, targetCommit);
         //mergeCase2(spiltPointCommit, currentCommit, targetCommit);
@@ -1056,9 +1055,14 @@ public class Repository {
      * merge() let a merged commit to have two parents, this will make the linked-list
      * into Graph.
      */
-    private static Commit getCommitAtSplitPoint(List<String> ancestorsListOfCommit1,
-                                                List<String> ancestorsListOfCommit2) {
-        // if you haven't call merge() before, the commit1 and commit2 will
+    private static Commit getCommitAtSplitPoint(List<String> ancestorsList1,
+                                                List<String> ancestorsList2) {
+
+        // List is a reference type, we don't want to change the value in it
+        List<String> ancestorsListOfCommit1 = new ArrayList<>(ancestorsList1);
+        List<String> ancestorsListOfCommit2 = new ArrayList<>(ancestorsList2);
+
+        // if you haven't called merge() before, the commit1 and commit2 will
         // only have one common ancestor: "initial commit".
         // but if have call merge(), they may have multiple common ancestor
         ancestorsListOfCommit1.retainAll(ancestorsListOfCommit2);
@@ -1072,8 +1076,6 @@ public class Repository {
             String ancestorCommitSha1 = commonAncestors.get(0);
             Commit ancestorCommit = getCommitBySha1(ancestorCommitSha1);
             List<String> ancestorsList = getAncestorsOfCommit(ancestorCommit);
-            boolean flag = false;
-            // TODO: if ancestorCommit has no ancestor
             if (ancestorsList.size() == 0) {
                 commonAncestors.remove(ancestorCommitSha1);
             }
