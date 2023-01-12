@@ -532,10 +532,6 @@ public class Repository {
         List<String> filenamesInCommit = getFilenamesInCommit(currentCommit);
         System.out.println("=== Untracked Files ===");
         for (String CWDFilename : Objects.requireNonNull(plainFilenamesIn(CWD))) {
-            // TODO: I don't know why .gitlet is not hidden and it will be viewed as a file
-            if (CWDFilename.equals(".gitlet")) {
-                continue;
-            }
             // if a file is present in the CWD but neither stagedForAddDir nor tracked
             boolean condition1 = !filenamesInCommit.contains(CWDFilename)
                     && !join(GITLET_STAGE_FOR_ADD_DIR, CWDFilename).exists();
@@ -960,11 +956,13 @@ public class Repository {
         }
 
         if (commitSha1.length() < 40) {
-            throw new GitletException("Commit Sha1 is too short");
+            System.out.println("No commit with that id exists.");
+            System.exit(0);
         }
         File file = join(GITLET_COMMITS_DIR, commitSha1.substring(0, 2), commitSha1);
         if (!file.exists()) {
-            throw new GitletException("Commit File does not exist");
+            System.out.println("No commit with that id exists.");
+            System.exit(0);
         }
         return readObject(file, Commit.class);
     }
