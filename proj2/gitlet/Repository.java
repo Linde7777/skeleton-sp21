@@ -736,16 +736,6 @@ public class Repository {
         add(CWDFilename);
     }
 
-    /*TODO: all these cases, it seems like it is just take the newest version of file to the result
-    compare HEAD with spilt point, if it is not the same
-    (when we say "not the same", it is: content is different or in one of them the file does not exist
-    when we say "same", it is: content is same or in both of them the file does not exist)
-    set HEADIsTheNewest as true, same we do to targetBranch,
-    then we get the result from the newest commit
-    if HEADIsTheNewest and targetIsTheNewest are both true, we get into the case of conflict
-
-    compare the result to HEAD, so we can determine to perform add() or remove()
-     */
     private static boolean checkMergeCases(Commit spiltPointCommit,
                                            Commit currentCommit, Commit targetCommit) {
         boolean hasMergeConflict = false;
@@ -763,15 +753,17 @@ public class Repository {
             boolean targetFileIsSameAsCurrFile =
                     compareTwoCommit(filename, targetCommit, currentCommit);
 
+            // if targetFileIsSameAsSpiltFile is false, then we know
+            // targetCommit contain the newest version of file
             if (!targetFileIsSameAsSpiltFile && currFileIsSameAsSpiltFile) {
                 updateContentsAndStage(targetCommit, filename);
             } else if (!currFileIsSameAsSpiltFile && targetFileIsSameAsSpiltFile) {
                 updateContentsAndStage(currentCommit, filename);
             } else if (!currFileIsSameAsSpiltFile && !targetFileIsSameAsCurrFile) {
-                // if they are both the newest, and they are different from each other,
-                // that means we meet conflict.
+                // if currCommit and targetCommit both contain the newest version of file,
+                // and their content are different from each other, that means we meet conflict.
 
-                // why we need !targetAndCurrCommitAreTheSame?
+                // why we need to check if they have different content?
                 // let's say at spiltPointCommit, A.txt content is "hello"
                 // at targetCommit, A.txt is removed, at currCommit, A.txt is also removed
                 // in this case, both targetCommit and currCommit are the
@@ -850,7 +842,8 @@ public class Repository {
 
     // we compare givenCommit and benchmarkCommit,
     // if the content of B.txt in givenCommit is NOT the same as
-    // the content of B.txt in benchmarkCommit, return false
+    // the content of B.txt in benchmarkCommit, return false,
+    // otherwise return true
     private static boolean compareTwoCommit(String filename, Commit givenCommit, Commit benchmarkCommit) {
         TreeMap<String, String> givenMap = givenCommit.getMap();
         TreeMap<String, String> spiltMap = benchmarkCommit.getMap();
