@@ -17,10 +17,6 @@ import static gitlet.StudentUtils.*;
  * @author Linde
  */
 public class Repository {
-    //TODO: what about move commit related function to Commit.java ?
-    // and also let Commit.java have GITLET_BLOBS_DIR and GITLET_COMMITS_DIR
-    // since many commit related function need these two directory
-
     /**
      * The current working directory.
      */
@@ -64,7 +60,7 @@ public class Repository {
     /**
      * The .gitlet/branches/master file, where store the sha1 value of master as file
      */
-    public static File master_FILE = join(GITLET_BRANCHES_DIR, "master");
+    private static File master_FILE = join(GITLET_BRANCHES_DIR, "master");
 
     /**
      * The .gitlet/branches/HEAD file, where store the sha1 value of HEAD as a file
@@ -85,7 +81,8 @@ public class Repository {
         if (!GITLET_DIR.exists()) {
             GITLET_DIR.mkdir();
         } else {
-            System.out.println("A Gitlet version-control system already exists in the current directory.");
+            System.out.println(
+                    "A Gitlet version-control system already exists in the current directory.");
             System.exit(0);
         }
         GITLET_STAGE_FOR_ADD_DIR.mkdir();
@@ -116,32 +113,32 @@ public class Repository {
     /**
      * add file to stagedForAddDir
      *
-     * @param CWDFilename the file we want to add
+     * @param CWDFileName the file we want to add
      */
-    public static void add(String CWDFilename) {
-        File CWDFile = join(CWD, CWDFilename);
+    public static void add(String CWDFileName) {
+        File CWDFile = join(CWD, CWDFileName);
         if (!CWDFile.exists()) {
             System.out.println("File does not exist.");
             System.exit(0);
         }
 
-        String CWDFileSha1 = sha1((Object) readContents(CWDFile));
+        String CWDFileSha1 = sha1(readContents(CWDFile));
         Commit currentCommit = getCommitBySha1(getHeadCommitSha1());
         TreeMap<String, String> map = currentCommit.getMap();
         // If the current working version of the file is identical to the
         // version in the current commit, do not stage it to be added,
-        if (map.containsKey(CWDFilename) && map.get(CWDFilename).equals(CWDFileSha1)) {
+        if (map.containsKey(CWDFileName) && map.get(CWDFileName).equals(CWDFileSha1)) {
             // and remove it from the staging area if it is already
             // there (as can happen when a file is changed, added,
             // and then changed back to it’s original version).
-            File fileInStagedForAdd = join(GITLET_STAGE_FOR_ADD_DIR, CWDFilename);
+            File fileInStagedForAdd = join(GITLET_STAGE_FOR_ADD_DIR, CWDFileName);
             if (fileInStagedForAdd.exists()) {
                 fileInStagedForAdd.delete();
             }
 
             // The file will no longer be staged for removal (see gitlet rm),
             // if it was at the time of the command.
-            File fileInStagedForRemove = join(GITLET_STAGE_FOR_REMOVE_DIR, CWDFilename);
+            File fileInStagedForRemove = join(GITLET_STAGE_FOR_REMOVE_DIR, CWDFileName);
             if (fileInStagedForRemove.exists()) {
                 fileInStagedForRemove.delete();
             }
@@ -211,7 +208,7 @@ public class Repository {
     private static String serializeCommit(Commit commit) {
         File commitFile = join(GITLET_COMMITS_DIR, "tempCommitName");
         writeObject(commitFile, commit);
-        String commitSha1 = sha1((Object) readContents(commitFile));
+        String commitSha1 = sha1(readContents(commitFile));
 
         File commitDir = join(GITLET_COMMITS_DIR, commitSha1.substring(0, 2));
         if (!commitDir.exists()) {
@@ -495,8 +492,8 @@ public class Repository {
         System.out.println("=== Branches ===");
         System.out.println("*" + theNameOfTheActiveBranch);
         for (String filename : Objects.requireNonNull(plainFilenamesIn(GITLET_BRANCHES_DIR))) {
-            if (filename.equals(theNameOfTheActiveBranch) ||
-                    filename.equals("HEAD") || filename.equals("activeBranch")) {
+            if (filename.equals(theNameOfTheActiveBranch)
+                    || filename.equals("HEAD") || filename.equals("activeBranch")) {
                 continue;
             }
             System.out.println(filename);
@@ -603,7 +600,6 @@ public class Repository {
         }
     }
 
-    //TODO: timeout, local test is passed
     public static void merge(String targetBranchName) {
         checkMergeFailureCases(targetBranchName);
         Commit targetCommit = getCommitAtTargetBranch(targetBranchName);
@@ -832,7 +828,12 @@ public class Repository {
         // if A has no ancestor, then we know A is not the latest ancestor,
         // then we remove A from commonAncestors
         while (commonAncestors.size() > 1) {
-            String ancestorCommitSha1 = commonAncestors.get(0);
+            // The later an element is added to the list,
+            // the closer it is to the initial commit.
+            // test36a-merge-parent2.in is a good example, try to
+            // use this function to find the latest common ancestor
+            // in that test
+            String ancestorCommitSha1 = commonAncestors.get(commonAncestors.size() - 1);
             Commit ancestorCommit = getCommitBySha1(ancestorCommitSha1);
             List<String> ancestorsList = getAncestorsOfCommit(ancestorCommit);
             if (ancestorsList.size() == 0) {
@@ -907,7 +908,7 @@ public class Repository {
                 continue;
             }
             String trackedFileSha1 = commitMap.get(filename);
-            String CWDFileSha1 = sha1((Object) readContents(join(CWD, filename)));
+            String CWDFileSha1 = sha1(readContents(join(CWD, filename)));
             if (!CWDFileSha1.equals(trackedFileSha1)) {
                 if (!join(GITLET_STAGE_FOR_ADD_DIR, filename).exists()) {
                     fileStateMap.put(filename, "modified");
@@ -919,8 +920,8 @@ public class Repository {
             if (join(CWD, filename).exists()) {
                 // if the file is staged for addition,
                 // but with different contents than in the working directory
-                if (!sha1((Object) readContents(join(GITLET_STAGE_FOR_ADD_DIR, filename)))
-                        .equals(sha1((Object) readContents(join(CWD, filename))))) {
+                if (!sha1(readContents(join(GITLET_STAGE_FOR_ADD_DIR, filename)))
+                        .equals(sha1(readContents(join(CWD, filename))))) {
 
                     fileStateMap.put(filename, "modified");
                 }

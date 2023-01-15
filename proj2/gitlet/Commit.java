@@ -1,7 +1,5 @@
 package gitlet;
 
-// TODO: any imports you need here
-
 import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
@@ -14,8 +12,6 @@ import static gitlet.Utils.*;
 
 /**
  * Represents a gitlet commit object.
- *  TODO: It's a good idea to give a description here of what else this Class
- *  does at a high level.
  *
  * @author Linde
  */
@@ -41,7 +37,7 @@ public class Commit implements Serializable {
     /**
      * where store the mapping of filename and its blob
      */
-    private TreeMap<String, String> map = new TreeMap<>();
+    private TreeMap<String, String> map;
 
     public TreeMap<String, String> getMap() {
         return map;
